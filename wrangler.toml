@@ -1,0 +1,22 @@
+name = "college-attendance-monitor"
+main = "src/index.ts"
+compatibility_date = "2025-09-01"
+workers_dev = true
+
+[observability.logs]
+enabled = true
+
+[[kv_namespaces]]
+binding = "ATTENDANCE_KV"
+id = "49b35e10a14048c9be548bd2e51b8685"
+preview_id = "8603698981ad40119a95a64956deb106"
+
+[triggers]
+# Cloudflare cron expressions are UTC. These cover 09:15-16:45 IST every
+# 15 minutes on Monday-Saturday, including 16:15, 16:30, and 16:45 for the
+# retry window of a class ending at 16:15. The Worker validates local time.
+crons = [
+  "45 3 * * 1-6",
+  "0,15,30,45 4-10 * * 1-6",
+  "0,15 11 * * 1-6"
+]
