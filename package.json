@@ -1,21 +1,29 @@
 {
   "name": "college-attendance-monitor",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Cloudflare Worker that monitors college attendance and notifies a Discord webhook.",
+  "description": "Cloudflare Worker that monitors college attendance and sends alerts via email, Discord, or browser push.",
   "packageManager": "pnpm@11.5.2",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "build": "vite build",
+    "dev": "wrangler dev --remote",
+    "dev:local": "wrangler dev",
+    "deploy": "vite build && wrangler deploy",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "cf-typegen": "wrangler types"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260815.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
     "typescript": "^5.7.2",
-    "vitest": "^3.2.4",
+    "vite": "^8.2.2",
     "wrangler": "^4.124.0"
+  },
+  "dependencies": {
+    "hono": "^4.13.7",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

@@ -1,10 +1,6 @@
-import { fetchAttendance, CollegeRequestError, CollegeSessionError } from "./college";
-import {
-  notifyAttendance,
-  notifyAttendanceNotUpdated,
-  notifyAuthenticationError,
-  notifyUnexpectedStatus,
-} from "./discord";
+import { fetchAttendance, CollegeRequestError } from "../college/api";
+import { CollegeAuthError } from "../college/auth";
+import { notifyStudent, notifyAuthError, notifyNotUpdated } from "../notify/notify";
 import {
   clearAuthError,
   classInstanceKey,
@@ -16,16 +12,19 @@ import {
   saveClassState,
   setFinalState,
 } from "./state";
-import {
+import type {
   AttendanceRecord,
   ClassState,
   Env,
   IndiaDateTime,
   MonitorAction,
   MonitorSummary,
+  User,
+  StudentMonitorSummary,
   TimetableEntry,
-} from "./types";
-import { getIndiaDateTime, minuteOfDay, normalizeKey } from "./time";
+} from "../types";
+import { listActiveStudents } from "../students";
+import { getIndiaDateTime, minuteOfDay, normalizeKey } from "../time";
 
 const FIRST_CLASS_END = 9 * 60 + 15;
 const LAST_CLASS_END = 16 * 60 + 15;
@@ -44,7 +43,7 @@ export function dueAttempt(
 }
 
 function safeErrorLabel(error: unknown): string {
-  if (error instanceof CollegeSessionError) return "college-session";
+  if (error instanceof CollegeAuthError) return "college-session";
   if (error instanceof CollegeRequestError) return "college-request";
   return "monitor-error";
 }
@@ -89,11 +88,14 @@ function summaryBase(now: IndiaDateTime): MonitorSummary {
     classesChecked: 0,
     timetableEntries: 0,
     actions: [],
+    studentsProcessed: 0,
+    students: [],
   };
 }
 
 async function processClass(
   env: Env,
+  student: User,
   entry: TimetableEntry,
   record: AttendanceRecord | undefined,
   now: IndiaDateTime,
@@ -107,7 +109,7 @@ async function processClass(
     entry.startTime,
     entry.endTime,
   );
-  const existing = await loadClassState(env, classKey);
+  const existing = await loadClassState(env, student.id, classKey);
   const state = existing ?? newClassState(classKey, now.date);
   const slot = slotKey(now.date, now.hour * 60 + now.minute);
 
@@ -126,13 +128,13 @@ async function processClass(
     lastAttemptAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   };
-  await saveClassState(env, attemptState);
+  await saveClassState(env, student.id, attemptState);
 
   if (record) {
     if (record.status === "Present" || record.status === "Absent") {
       try {
-        await notifyAttendance(env, record);
-        await saveClassState(env, setFinalState(attemptState, record.status, true));
+        await notifyStudent(env, student, record);
+        await saveClassState(env, student.id, setFinalState(attemptState, record.status, true));
         actions.push({
           subject: entry.subject,
           action: "notified",
@@ -140,13 +142,13 @@ async function processClass(
           attempt: attempt.attempt,
         });
       } catch (error) {
-        logError("discord-attendance-notification", error);
+        logError("notification-error", error);
         actions.push({
           subject: entry.subject,
           action: "notification-error",
           status: record.status,
           attempt: attempt.attempt,
-          error: "Discord notification failed",
+          error: "Notification failed",
         });
       }
       return;
@@ -154,12 +156,7 @@ async function processClass(
 
     // A row exists, so it is not a missing-record retry. Preserve the exact
     // status for diagnosis and finish this class instance.
-    try {
-      await notifyUnexpectedStatus(env, record);
-    } catch (error) {
-      logError("discord-unexpected-status-notification", error);
-    }
-    await saveClassState(env, setFinalState(attemptState, record.rawStatus, false));
+    await saveClassState(env, student.id, setFinalState(attemptState, record.rawStatus, false));
     actions.push({
       subject: entry.subject,
       action: "unexpected-status",
@@ -171,31 +168,30 @@ async function processClass(
 
   if (attempt.attempt === 3) {
     try {
-      await notifyAttendanceNotUpdated(env, {
+      await notifyNotUpdated(env, student, {
         subject: entry.subject,
         teacher: entry.teacher,
         date: now.date,
-        expectedTime: entry.endTime,
       });
-      await saveClassState(env, setFinalState(attemptState, "Not updated", true));
+      await saveClassState(env, student.id, setFinalState(attemptState, "Not updated", true));
       actions.push({
         subject: entry.subject,
         action: "not-updated-warning",
         attempt: attempt.attempt,
       });
     } catch (error) {
-      logError("discord-not-updated-notification", error);
+      logError("notification-error", error);
       actions.push({
         subject: entry.subject,
         action: "notification-error",
         attempt: attempt.attempt,
-        error: "Discord notification failed",
+        error: "Notification failed",
       });
     }
     return;
   }
 
-  await saveClassState(env, attemptState);
+  await saveClassState(env, student.id, attemptState);
   actions.push({ subject: entry.subject, action: "retry-scheduled", attempt: attempt.attempt });
 }
 
@@ -208,18 +204,68 @@ export async function runMonitorCycle(env: Env, now = new Date()): Promise<Monit
     return summary;
   }
 
+  let students: User[];
+  try {
+    students = await listActiveStudents(env);
+  } catch (error) {
+    summary.success = false;
+    summary.ignored = "Student records could not be read.";
+    logError("student-records", error);
+    return summary;
+  }
+
+  if (students.length === 0) {
+    summary.ignored = "No active students are configured.";
+    return summary;
+  }
+
+  for (const student of students) {
+    const studentSummary = await runStudentMonitorCycle(env, student, india);
+    summary.students.push(studentSummary);
+    summary.studentsProcessed += 1;
+    summary.success = summary.success && studentSummary.success;
+    summary.recordsFound += studentSummary.recordsFound;
+    summary.classesChecked += studentSummary.classesChecked;
+    summary.timetableEntries += studentSummary.timetableEntries;
+    summary.actions.push(
+      ...studentSummary.actions.map((action) => ({
+        ...action,
+        studentId: student.id,
+        studentName: student.name,
+      })),
+    );
+  }
+
+  return summary;
+}
+
+async function runStudentMonitorCycle(
+  env: Env,
+  student: User,
+  india: IndiaDateTime,
+): Promise<StudentMonitorSummary> {
+  const summary: StudentMonitorSummary = {
+    id: student.id,
+    name: student.name,
+    success: true,
+    recordsFound: 0,
+    classesChecked: 0,
+    timetableEntries: 0,
+    actions: [],
+  };
+
   let records: AttendanceRecord[];
   try {
-    records = await fetchAttendance(env, india.year, india.monthName);
+    records = await fetchAttendance(env, student.enrollment_id, india.year, india.monthName);
   } catch (error) {
-    if (error instanceof CollegeSessionError) {
+    if (error instanceof CollegeAuthError) {
       try {
-        if (!(await readAuthErrorState(env))) {
-          await notifyAuthenticationError(env);
-          await markAuthErrorNotified(env);
+        if (!(await readAuthErrorState(env, student.id))) {
+          await notifyAuthError(env, student);
+          await markAuthErrorNotified(env, student.id);
         }
       } catch (notificationError) {
-        logError("discord-authentication-notification", notificationError);
+        logError("notification-error", notificationError);
       }
       summary.success = false;
       summary.ignored = "College session is not valid.";
@@ -233,7 +279,7 @@ export async function runMonitorCycle(env: Env, now = new Date()): Promise<Monit
   }
 
   try {
-    await clearAuthError(env);
+    await clearAuthError(env, student.id);
   } catch (error) {
     summary.success = false;
     summary.ignored = "Authentication state could not be updated.";
@@ -244,7 +290,7 @@ export async function runMonitorCycle(env: Env, now = new Date()): Promise<Monit
   summary.recordsFound = records.length;
   let timetable;
   try {
-    timetable = await learnTimetable(env, records);
+    timetable = await learnTimetable(env, student.id, records);
   } catch (error) {
     summary.success = false;
     summary.ignored = "Timetable state could not be updated.";
@@ -280,6 +326,7 @@ export async function runMonitorCycle(env: Env, now = new Date()): Promise<Monit
     summary.classesChecked += 1;
     await processClass(
       env,
+      student,
       entry,
       findMatchingRecord(records, india.date, entry),
       india,

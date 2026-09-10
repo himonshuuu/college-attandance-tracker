@@ -9,7 +9,10 @@
     "types": ["@cloudflare/workers-types"],
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "allowJs": false
+    "allowJs": false,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
   },
-  "include": ["src/**/*.ts", "test/**/*.ts", "vitest.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
+

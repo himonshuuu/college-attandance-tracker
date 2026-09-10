@@ -5,5 +5,5 @@ dist/
 .env
 .env.*
 !.env.example
-coverage/
+worker-configuration.d.ts
 .DS_Store

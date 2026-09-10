@@ -1,5 +1,5 @@
-import { AttendanceRecord } from "./types";
-import { normalizeTimeRange, normalizeWhitespace, parseCollegeDate } from "./time";
+import type { AttendanceRecord } from "../types";
+import { normalizeTimeRange, normalizeWhitespace, parseCollegeDate } from "../time";
 
 export class AttendanceHtmlError extends Error {
   constructor(public readonly kind: "missing-table" | "invalid-table", message: string) {

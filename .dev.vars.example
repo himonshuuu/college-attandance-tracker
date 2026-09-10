@@ -1,0 +1,14 @@
+COLLEGE_LOGIN_URL= 
+COLLEGE_LOGIN_REFERER= 
+COLLEGE_PROFILE_URL= 
+COLLEGE_ATTENDANCE_URL= 
+COLLEGE_ORIGIN= 
+COLLEGE_REFERER= 
+DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/replace/replace
+RESEND_API_KEY=re_xxxx...
+
+FIREBASE_PROJECT_ID=college-attandance-tracker-202
+FIREBASE_API_KEY=AIzaSyAem3j-vD6nYTAoqvG1p2IYYCFQ7FL1V8Y
+FIREBASE_APP_ID=1:1057513234016:web:38c03953ff34e3561eed05
+FIREBASE_VAPID_KEY=BPTsvGp...
+FIREBASE_SERVICE_ACCOUNT='{"type":"service_account","project_id":"your-project-id","private_key":"-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n","client_email":"firebase-adminsdk@your-project-id.iam.gserviceaccount.com"}'
