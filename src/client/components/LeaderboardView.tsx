@@ -89,7 +89,7 @@ export const LeaderboardView: React.FC = () => {
             <div className="podium-card gold bg-gradient-to-b from-amber-50/60 to-white rounded-2xl p-3.5 sm:p-5 text-center flex-1 max-w-[130px] sm:max-w-[165px] min-h-[210px] sm:min-h-[245px] flex flex-col justify-between border-2 border-amber-400 shadow-lg shadow-amber-500/10 relative -translate-y-3 z-10">
               {/* Crown Badge */}
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full text-[11px] font-black shadow-sm flex items-center gap-1">
-                <span>👑</span> 1st
+                <span></span> 1st
               </div>
               <div className="pt-2">
                 <div className="pod-avatar w-12 h-12 sm:w-16 sm:h-16 rounded-full mx-auto mb-2 flex items-center justify-center font-black text-base sm:text-xl text-white shadow-md ring-4 ring-amber-400/30">
