@@ -50,34 +50,88 @@ export const LeaderboardView: React.FC = () => {
   }
 
   const { students } = data;
-
-  const medals = [
-    students[1] ? { cls: "silver", data: students[1], rank: "2nd" } : null,
-    students[0] ? { cls: "gold", data: students[0], rank: "1st" } : null,
-    students[2] ? { cls: "bronze", data: students[2], rank: "3rd" } : null,
-  ].filter(Boolean) as Array<{ cls: string; data: StudentLeaderboard; rank: string }>;
+  const first = students[0];
+  const second = students[1];
+  const third = students[2];
 
   return (
     <div>
       {/* Top 3 Podium Cards */}
-      {medals.length > 0 && (
-        <div className="flex justify-center items-end gap-3 mb-6 flex-wrap">
-          {medals.map((m, idx) => (
-            <div
-              key={idx}
-              className={`podium-card ${m.cls} bg-white rounded-2xl p-4 text-center flex-1 max-w-[140px] sm:max-w-[160px] border border-slate-100 shadow-sm`}
-            >
-              <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">{m.rank}</div>
-              <div className="pod-avatar w-11 h-11 rounded-full mx-auto mt-2.5 mb-2 flex items-center justify-center font-bold text-base text-white">
-                {initials(m.data.name)}
+      {students.length > 0 && (
+        <div className="flex items-end justify-center gap-2 sm:gap-4 mb-8 pt-4">
+          {/* 2nd Place (Silver) - Left */}
+          {second ? (
+            <div className="podium-card silver bg-white rounded-2xl p-3 sm:p-4 text-center flex-1 max-w-[110px] sm:max-w-[140px] min-h-[170px] sm:min-h-[195px] flex flex-col justify-between border border-slate-200 shadow-sm relative">
+              <div>
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-extrabold bg-slate-100 text-slate-600 mb-2">
+                  2nd
+                </span>
+                <div className="pod-avatar w-11 h-11 sm:w-12 sm:h-12 rounded-full mx-auto mb-2 flex items-center justify-center font-bold text-sm sm:text-base text-white shadow-sm">
+                  {initials(second.name)}
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-slate-800 truncate px-1" title={second.name}>
+                  {second.name}
+                </div>
               </div>
-              <div className="text-sm font-semibold text-slate-900 mb-1 truncate">{m.data.name}</div>
-              <div className="pod-pct text-2xl font-bold">{m.data.pct}%</div>
-              <div className="text-[11px] text-slate-400 mt-0.5">
-                {m.data.present}/{m.data.total} classes
+              <div>
+                <div className="pod-pct text-xl sm:text-2xl font-black">{second.pct}%</div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">
+                  {second.present}/{second.total}
+                </div>
               </div>
             </div>
-          ))}
+          ) : (
+            <div className="flex-1 max-w-[110px] sm:max-w-[140px]"></div>
+          )}
+
+          {/* 1st Place (Gold) - Center (Taller) */}
+          {first && (
+            <div className="podium-card gold bg-gradient-to-b from-amber-50/60 to-white rounded-2xl p-3.5 sm:p-5 text-center flex-1 max-w-[130px] sm:max-w-[165px] min-h-[210px] sm:min-h-[245px] flex flex-col justify-between border-2 border-amber-400 shadow-lg shadow-amber-500/10 relative -translate-y-3 z-10">
+              {/* Crown Badge */}
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-full text-[11px] font-black shadow-sm flex items-center gap-1">
+                <span>👑</span> 1st
+              </div>
+              <div className="pt-2">
+                <div className="pod-avatar w-12 h-12 sm:w-16 sm:h-16 rounded-full mx-auto mb-2 flex items-center justify-center font-black text-base sm:text-xl text-white shadow-md ring-4 ring-amber-400/30">
+                  {initials(first.name)}
+                </div>
+                <div className="text-xs sm:text-sm font-black text-slate-900 truncate px-1" title={first.name}>
+                  {first.name}
+                </div>
+              </div>
+              <div>
+                <div className="pod-pct text-2xl sm:text-3xl font-black">{first.pct}%</div>
+                <div className="text-[10px] sm:text-[11px] font-semibold text-amber-700 mt-0.5">
+                  {first.present}/{first.total} classes
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3rd Place (Bronze) - Right */}
+          {third ? (
+            <div className="podium-card bronze bg-white rounded-2xl p-3 sm:p-4 text-center flex-1 max-w-[110px] sm:max-w-[140px] min-h-[155px] sm:min-h-[180px] flex flex-col justify-between border border-amber-200/80 shadow-sm relative">
+              <div>
+                <span className="inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-extrabold bg-amber-50 text-amber-800 mb-2">
+                  3rd
+                </span>
+                <div className="pod-avatar w-10 h-10 sm:w-11 sm:h-11 rounded-full mx-auto mb-2 flex items-center justify-center font-bold text-xs sm:text-sm text-white shadow-sm">
+                  {initials(third.name)}
+                </div>
+                <div className="text-xs sm:text-sm font-bold text-slate-800 truncate px-1" title={third.name}>
+                  {third.name}
+                </div>
+              </div>
+              <div>
+                <div className="pod-pct text-xl sm:text-2xl font-black">{third.pct}%</div>
+                <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">
+                  {third.present}/{third.total}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 max-w-[110px] sm:max-w-[140px]"></div>
+          )}
         </div>
       )}
 

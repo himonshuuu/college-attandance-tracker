@@ -13,9 +13,19 @@ analyticsRouter.get("/", async (c) => {
   const enrollmentId = session.enrollmentId;
 
   const now = new Date();
-  const month = Number(c.req.query("month") ?? (now.getMonth() + 1));
+  const monthParam = c.req.query("month");
+  let monthIdx = now.getMonth();
+  if (monthParam) {
+    const num = Number(monthParam);
+    if (!isNaN(num) && num >= 1 && num <= 12) {
+      monthIdx = num - 1;
+    } else {
+      const foundIdx = MONTHS.findIndex((m) => m.toLowerCase() === monthParam.toLowerCase());
+      if (foundIdx !== -1) monthIdx = foundIdx;
+    }
+  }
   const year = Number(c.req.query("year") ?? now.getFullYear());
-  const monthName = MONTHS[month - 1] ?? MONTHS[now.getMonth()];
+  const monthName = MONTHS[monthIdx];
 
   let profile, records;
   try {

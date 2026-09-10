@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 interface SubscribeFetchData {
   hasBrowser?: boolean;
   hasEmail?: boolean;
+  hasMonthlyReport?: boolean;
   email?: string;
   vapidKey?: string;
   error?: string;
@@ -35,6 +36,7 @@ const FIREBASE_CONFIG = {
 export const SubscribeView: React.FC = () => {
   const [hasFirebase, setHasFirebase] = useState(false);
   const [hasEmail, setHasEmail] = useState(false);
+  const [hasMonthlyReport, setHasMonthlyReport] = useState(false);
   const [vapidKey, setVapidKey] = useState("BH2Mc0SDTxo1LZnxF2FQL-p2TlBRX1nfG0HNOSG3H0Yx8qBb8ZwD40suAFcBCg_8ZO4dMzQjUcOmTft_oCXg3wA");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,6 +53,7 @@ export const SubscribeView: React.FC = () => {
         const data = d as SubscribeFetchData;
         setHasFirebase(!!data.hasBrowser);
         setHasEmail(!!data.hasEmail);
+        setHasMonthlyReport(!!data.hasMonthlyReport);
         if (data.vapidKey) setVapidKey(data.vapidKey);
       })
       .catch((err: Error) => setError(err.message))
@@ -88,6 +91,7 @@ export const SubscribeView: React.FC = () => {
     const methods: string[] = [];
     if (hasFirebase) methods.push("browser");
     if (hasEmail) methods.push("email");
+    if (hasMonthlyReport) methods.push("monthly_report");
 
     let pushSubscription: string | unknown = null;
 
@@ -188,7 +192,13 @@ export const SubscribeView: React.FC = () => {
             className={`method-card ${hasFirebase ? "active" : ""}`}
           >
             <input type="checkbox" checked={hasFirebase} readOnly className="hidden" />
-            <div className="dot"></div>
+            <div className="dot">
+              {hasFirebase && (
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
             <div>
               <div className="text-sm font-medium">Browser Notification</div>
               <div className="text-xs text-slate-400">Push notifications in your browser</div>
@@ -201,10 +211,35 @@ export const SubscribeView: React.FC = () => {
             className={`method-card ${hasEmail ? "active" : ""}`}
           >
             <input type="checkbox" checked={hasEmail} readOnly className="hidden" />
-            <div className="dot"></div>
+            <div className="dot">
+              {hasEmail && (
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
             <div>
               <div className="text-sm font-medium">Email</div>
               <div className="text-xs text-slate-400">Receive alerts in your inbox</div>
+            </div>
+          </div>
+
+          {/* Monthly Report */}
+          <div
+            onClick={() => setHasMonthlyReport(!hasMonthlyReport)}
+            className={`method-card ${hasMonthlyReport ? "active" : ""}`}
+          >
+            <input type="checkbox" checked={hasMonthlyReport} readOnly className="hidden" />
+            <div className="dot">
+              {hasMonthlyReport && (
+                <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </div>
+            <div>
+              <div className="text-sm font-medium">Monthly Report</div>
+              <div className="text-xs text-slate-400">Receive an automated summary report at the end of every month</div>
             </div>
           </div>
         </div>

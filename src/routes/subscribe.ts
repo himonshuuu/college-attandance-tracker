@@ -23,6 +23,7 @@ subscribeRouter.get("/", async (c) => {
     email: emailSub?.email || session.email,
     hasBrowser: methods.includes("browser") || methods.includes("firebase"),
     hasEmail: methods.includes("email"),
+    hasMonthlyReport: methods.includes("monthly_report"),
     vapidKey: c.env.FIREBASE_VAPID_KEY || "BH2Mc0SDTxo1LZnxF2FQL-p2TlBRX1nfG0HNOSG3H0Yx8qBb8ZwD40suAFcBCg_8ZO4dMzQjUcOmTft_oCXg3wA",
   });
 });
@@ -39,14 +40,15 @@ subscribeRouter.post("/", async (c) => {
     const body = await c.req.parseBody();
     if (body.method_email) rawMethods.push("email");
     if (body.method_firebase || body.method_browser) rawMethods.push("browser");
+    if (body.method_monthly_report) rawMethods.push("monthly_report");
     if (Array.isArray(body.methods)) rawMethods = body.methods.map(String);
     pushSubscription = body.pushSubscription ? String(body.pushSubscription) : null;
   } else {
     try {
       const body = (await c.req.json()) as Record<string, unknown>;
       if (Array.isArray(body.methods)) {
-        rawMethods = body.methods.map(String).filter(m => ["browser", "firebase", "email"].includes(m));
-      } else if (typeof body.method === "string" && ["browser", "firebase", "email"].includes(body.method)) {
+        rawMethods = body.methods.map(String).filter(m => ["browser", "firebase", "email", "monthly_report"].includes(m));
+      } else if (typeof body.method === "string" && ["browser", "firebase", "email", "monthly_report"].includes(body.method)) {
         rawMethods = [body.method];
       }
       pushSubscription = body.pushSubscription ? (typeof body.pushSubscription === "string" ? body.pushSubscription : JSON.stringify(body.pushSubscription)) : null;
@@ -55,9 +57,9 @@ subscribeRouter.post("/", async (c) => {
     }
   }
 
-  // Normalize method names to database CHECK constraint values ('browser', 'email')
+  // Normalize method names to database CHECK constraint values ('browser', 'email', 'monthly_report')
   const normalizedMethods = Array.from(
-    new Set(rawMethods.map(m => (m === "firebase" || m === "browser" ? "browser" : "email")))
+    new Set(rawMethods.map(m => (m === "firebase" || m === "browser" ? "browser" : m === "monthly_report" ? "monthly_report" : "email")))
   );
 
   const email = session.email;
@@ -78,7 +80,7 @@ subscribeRouter.post("/", async (c) => {
   await c.env.DB.prepare(`DELETE FROM subscriptions WHERE enrollment_id = ?`).bind(enrollmentId).run();
 
   for (const method of normalizedMethods) {
-    const methodEmail = method === "email" ? email : null;
+    const methodEmail = (method === "email" || method === "monthly_report") ? email : null;
     const methodPush = method === "browser" ? pushSubscription : null;
     await c.env.DB.prepare(
       `INSERT INTO subscriptions (enrollment_id, method, email, push_subscription) VALUES (?, ?, ?, ?)`
@@ -86,7 +88,7 @@ subscribeRouter.post("/", async (c) => {
   }
 
   const labels = normalizedMethods.length > 0
-    ? normalizedMethods.map(m => m === "browser" ? "Browser Push" : "Email").join(" and ")
+    ? normalizedMethods.map(m => m === "browser" ? "Browser Push" : m === "monthly_report" ? "Monthly Report" : "Email").join(" and ")
     : "none";
 
   if (normalizedMethods.length > 0) {
