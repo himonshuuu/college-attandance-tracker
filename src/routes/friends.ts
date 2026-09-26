@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { requireAuth, type HonoEnv } from "../middleware/auth";
-import { fetchAttendance } from "../college/api";
+import { getCachedAttendance } from "../engage/cache";
 import { currentMonth } from "../engage/ranks";
 
 export const friendsRouter = new Hono<HonoEnv>();
@@ -24,7 +24,7 @@ async function myUserId(c: { env: HonoEnv["Bindings"]; get: (k: "session") => { 
 async function monthPct(env: HonoEnv["Bindings"], enrollmentId: string): Promise<{ pct: number; total: number; present: number; absent: number }> {
   const { year, monthName } = currentMonth();
   try {
-    const records = await fetchAttendance(env, enrollmentId, year, monthName);
+    const records = await getCachedAttendance(env, enrollmentId, year, monthName);
     const total = records.length;
     const present = records.filter((r) => r.status === "Present").length;
     const absent = records.filter((r) => r.status === "Absent").length;
@@ -175,8 +175,8 @@ friendsRouter.get("/compare/:friendUserId", async (c) => {
 
   const { year, monthName } = currentMonth();
   const [meRecords, frRecords] = await Promise.all([
-    fetchAttendance(c.env, session.enrollmentId, year, monthName).catch(() => []),
-    fetchAttendance(c.env, friend.enrollment_id, year, monthName).catch(() => []),
+    getCachedAttendance(c.env, session.enrollmentId, year, monthName).catch(() => []),
+    getCachedAttendance(c.env, friend.enrollment_id, year, monthName).catch(() => []),
   ]);
 
   const summarize = (records: typeof meRecords) => {

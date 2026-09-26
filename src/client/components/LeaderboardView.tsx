@@ -15,6 +15,20 @@ interface LeaderboardData {
   year: number;
   totalStudents: number;
   checksText?: string;
+  updatedAt?: string | null;
+  staleCount?: number;
+  refreshing?: boolean;
+  building?: boolean;
+}
+
+function timeAgo(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.round(hours / 24)}d ago`;
 }
 
 function initials(name: string): string {
@@ -59,10 +73,14 @@ export const LeaderboardView: React.FC = () => {
   if (!data || !data.students || data.students.length === 0) {
     return (
       <div className="text-center py-12 px-6">
-        <div className="text-3xl mb-2">🏁</div>
-        <p className="text-slate-500 text-sm font-medium">The leaderboard is empty.</p>
+        <div className="text-3xl mb-2">{data?.building ? "⏳" : "🏁"}</div>
+        <p className="text-slate-500 text-sm font-medium">
+          {data?.building ? "Building the leaderboard..." : "The leaderboard is empty."}
+        </p>
         <p className="text-slate-400 text-xs mt-1 leading-relaxed">
-          Ranks appear once classmates join and classes are marked.
+          {data?.building
+            ? "Fetching everyone's latest attendance — check back in a few minutes."
+            : "Ranks appear once classmates join and classes are marked."}
           <br />
           {data?.checksText ? `Checks run ${data.checksText}.` : "Checks run after every class."}
         </p>
@@ -77,6 +95,15 @@ export const LeaderboardView: React.FC = () => {
 
   return (
     <div>
+      {/* Freshness note — data is served from fast snapshots, refreshed hourly */}
+      <div className="bg-white rounded-2xl px-4 py-3 mb-4 flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full shrink-0 ${data.refreshing ? "bg-amber-400 animate-pulse" : "bg-green-500"}`}></span>
+        <p className="text-[11px] text-slate-500">
+          {data.updatedAt ? `Updated ${timeAgo(data.updatedAt)}` : "Updating ranks..."}
+          {data.refreshing ? " · refreshing now, pull to reload in a bit" : " · ranks refresh hourly"}
+        </p>
+      </div>
+
       {/* Top 3 Podium Cards */}
       {students.length > 0 && (
         <div className="flex items-end justify-center gap-2 sm:gap-4 mb-8 pt-4">
@@ -185,8 +212,8 @@ export const LeaderboardView: React.FC = () => {
         })}
       </div>
       <p className="text-center text-[11px] text-slate-400 mt-4 leading-relaxed">
-        Ranks update after every class check. Climb or slip and we'll email you. ✉️
-        {data.checksText ? <><br />{data.checksText}</> : null}
+        Ranks refresh hourly — climb or slip and we'll email you. ✉️
+        {data.checksText ? <><br />Checks run {data.checksText}.</> : null}
       </p>
     </div>
   );

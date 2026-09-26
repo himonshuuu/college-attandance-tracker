@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireAuth, type HonoEnv } from "../middleware/auth";
-import { fetchAttendance, fetchStudentProfile } from "../college/api";
+import { fetchStudentProfile } from "../college/api";
+import { getCachedAttendance } from "../engage/cache";
 import { CHECKS_TEXT } from "../engage/stats";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
@@ -32,7 +33,7 @@ analyticsRouter.get("/", async (c) => {
   try {
     [profile, records] = await Promise.all([
       fetchStudentProfile(c.env, enrollmentId),
-      fetchAttendance(c.env, enrollmentId, year, monthName),
+      getCachedAttendance(c.env, enrollmentId, year, monthName, 15),
     ]);
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : "Failed to fetch data" }, 500);

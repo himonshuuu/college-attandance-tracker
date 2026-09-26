@@ -1,4 +1,5 @@
-import { getSession, CollegeAuthError } from "./auth";
+import { getSession, invalidateSession, CollegeAuthError } from "./auth";
+import { browserHeaders, fetchWithRetry, looksLikeBlockPage, looksLikeLoginPage, sleep } from "./net";
 import { parseAttendanceHtml, AttendanceHtmlError } from "./parser";
 import type { Env, AttendanceRecord, StudentProfile } from "../types";
 
@@ -14,6 +15,64 @@ export class CollegeRequestError extends Error {
 
 export function isCollegeAuthError(error: unknown): error is CollegeAuthError {
   return error instanceof CollegeAuthError;
+}
+
+/**
+ * Fetches portal HTML with WAF awareness:
+ * - block/challenge pages → back off and retry (transient, session untouched)
+ * - login form served instead of content → PHP session died (invalidate it)
+ * - explicit 401/403 → session invalid (invalidate it)
+ */
+async function fetchPortalHtml(
+  env: Env,
+  label: string,
+  url: string,
+  init: RequestInit,
+  enrollmentId: string,
+): Promise<string> {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response: Response;
+    try {
+      response = await fetchWithRetry(url, init);
+    } catch {
+      throw new CollegeRequestError(`Could not reach the college ${label} endpoint.`, "network");
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      await invalidateSession(env, enrollmentId);
+      throw new CollegeAuthError("College session is invalid.", "session");
+    }
+    if (!response.ok) {
+      throw new CollegeRequestError(
+        `College ${label} endpoint returned HTTP ${response.status}.`,
+        "http",
+      );
+    }
+
+    let html: string;
+    try {
+      html = await response.text();
+    } catch {
+      throw new CollegeRequestError(`Could not read the college ${label} response.`, "network");
+    }
+
+    if (looksLikeBlockPage(html)) {
+      console.error(JSON.stringify({ event: "portal-block-page", endpoint: label, attempt: attempt + 1 }));
+      if (attempt < 2) {
+        await sleep(2500 * (attempt + 1) + Math.random() * 1000);
+        continue;
+      }
+      throw new CollegeRequestError("College portal is rate-limiting requests.", "http");
+    }
+
+    if (looksLikeLoginPage(html)) {
+      await invalidateSession(env, enrollmentId);
+      throw new CollegeAuthError("College session expired.", "session");
+    }
+
+    return html;
+  }
+  throw new CollegeRequestError(`College ${label} request failed.`, "network");
 }
 
 function profileCellText(html: string): string {
@@ -85,37 +144,21 @@ export async function fetchStudentProfile(
 
   const session = await getSession(env, enrollmentId);
 
-  let response: Response;
-  try {
-    response = await fetch(env.COLLEGE_PROFILE_URL, {
+  const html = await fetchPortalHtml(
+    env,
+    "profile",
+    env.COLLEGE_PROFILE_URL,
+    {
       method: "GET",
-      headers: {
+      headers: browserHeaders({
         Accept: "text/html,application/xhtml+xml",
         Cookie: `PHPSESSID=${session.sessionId}`,
         Origin: env.COLLEGE_ORIGIN,
         Referer: env.COLLEGE_REFERER,
-      },
-    });
-  } catch {
-    throw new CollegeRequestError("Could not reach the college profile endpoint.", "network");
-  }
-
-  if (response.status === 401 || response.status === 403) {
-    throw new CollegeAuthError("College session is invalid.", "session");
-  }
-  if (!response.ok) {
-    throw new CollegeRequestError(
-      `College profile endpoint returned HTTP ${response.status}.`,
-      "http",
-    );
-  }
-
-  let html: string;
-  try {
-    html = await response.text();
-  } catch {
-    throw new CollegeRequestError("Could not read the college profile response.", "network");
-  }
+      }),
+    },
+    enrollmentId,
+  );
 
   return parseStudentProfileHtml(html, env.COLLEGE_PROFILE_URL);
 }
@@ -140,44 +183,29 @@ export async function fetchAttendance(
   form.append("year", String(year));
   form.append("month", month);
 
-  let response: Response;
-  try {
-    response = await fetch(env.COLLEGE_ATTENDANCE_URL, {
+  const html = await fetchPortalHtml(
+    env,
+    "attendance",
+    env.COLLEGE_ATTENDANCE_URL,
+    {
       method: "POST",
-      headers: {
+      headers: browserHeaders({
         Accept: "*/*",
         Cookie: `PHPSESSID=${session.sessionId}`,
         Origin: env.COLLEGE_ORIGIN,
         Referer: env.COLLEGE_REFERER,
         "X-Requested-With": "XMLHttpRequest",
-      },
+      }),
       body: form,
-    });
-  } catch {
-    throw new CollegeRequestError("Could not reach the college attendance endpoint.", "network");
-  }
-
-  if (response.status === 401 || response.status === 403) {
-    throw new CollegeAuthError("College session is invalid.", "session");
-  }
-  if (!response.ok) {
-    throw new CollegeRequestError(
-      `College attendance endpoint returned HTTP ${response.status}.`,
-      "http",
-    );
-  }
-
-  let html: string;
-  try {
-    html = await response.text();
-  } catch {
-    throw new CollegeRequestError("Could not read the college attendance response.", "network");
-  }
+    },
+    enrollmentId,
+  );
 
   try {
     return parseAttendanceHtml(html);
   } catch (error) {
     if (error instanceof AttendanceHtmlError && error.kind === "missing-table") {
+      await invalidateSession(env, enrollmentId);
       throw new CollegeAuthError("Attendance table not found — session may be invalid.", "session");
     }
     throw new CollegeRequestError("College attendance HTML was invalid.", "parse");

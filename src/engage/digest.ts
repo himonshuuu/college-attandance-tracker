@@ -1,4 +1,4 @@
-import { fetchAttendance } from "../college/api";
+import { getCachedAttendance } from "./cache";
 import type { Env } from "../types";
 import { emailCard, escapeHtml, sendEmail } from "../notify/notify";
 import { awardBadges, BADGES } from "./badges";
@@ -31,7 +31,7 @@ export async function runWeeklyDigest(env: Env): Promise<{ sent: number; errors:
   for (const u of users.results) {
     if (!u.email) continue;
     try {
-      const records = await fetchAttendance(env, u.enrollment_id, year, monthName).catch(() => []);
+      const records = await getCachedAttendance(env, u.enrollment_id, year, monthName).catch(() => []);
       const total = records.length;
       const present = records.filter((r) => r.status === "Present").length;
       const absent = records.filter((r) => r.status === "Absent").length;

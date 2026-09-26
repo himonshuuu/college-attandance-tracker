@@ -15,8 +15,10 @@ import { friendsRouter } from "./routes/friends";
 import { runMonitorCycle } from "./monitor/monitor";
 import { maybeCheckRanksDaily } from "./engage/ranks";
 import { runWeeklyDigest } from "./engage/digest";
+import { runCacheWarm } from "./engage/warm";
 
 const WEEKLY_DIGEST_CRON = "30 1 * * 1"; // Monday 07:00 IST
+const NIGHTLY_WARM_CRON = "0 21 * * *"; // Daily 02:30 IST — portal is idle
 
 const app = new Hono<HonoEnv>();
 
@@ -49,13 +51,31 @@ const APP_PATHS = [
   "/friends",
 ];
 
+// App paths (client-side router): serve the SPA shell so deep links,
+// refreshes and shared URLs work. Real data still comes from /api/*.
+// NOTE: the shell is inlined because subrequests from inside a Worker go
+// straight back to the Worker (bypassing static assets). Keep this in sync
+// with public/index.html (built output) if that file's structure changes.
+const APP_SHELL = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" crossorigin src="/assets/index.js"></script>
+  </head>
+  <body class="bg-slate-50 text-slate-900 min-h-screen p-4 sm:p-6 pb-24">
+    <div id="root"></div>
+  </body>
+</html>`;
+
 for (const path of APP_PATHS) {
-  app.get(path, async (c) => {
-    const url = new URL("/index.html", c.req.url);
-    const asset = await c.env.ASSETS.fetch(new Request(url.toString(), c.req.raw));
-    const headers = new Headers(asset.headers);
-    headers.set("content-type", "text/html; charset=utf-8");
-    return new Response(asset.body, { status: 200, headers });
+  app.get(path, (c) => {
+    return c.html(APP_SHELL);
   });
 }
 
@@ -75,6 +95,14 @@ export default {
       context.waitUntil(
         runWeeklyDigest(env).catch((err) => {
           console.error(JSON.stringify({ event: "weekly-digest-error", error: String(err) }));
+        })
+      );
+      return;
+    }
+    if (event.cron === NIGHTLY_WARM_CRON) {
+      context.waitUntil(
+        runCacheWarm(env).catch((err) => {
+          console.error(JSON.stringify({ event: "cache-warm-error", error: String(err) }));
         })
       );
       return;

@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { requireAuth, type HonoEnv } from "../middleware/auth";
-import { fetchAttendance } from "../college/api";
+import { getCachedAttendance } from "../engage/cache";
 import { awardBadges, BADGES, listBadges } from "../engage/badges";
 import { computeMonthRanks, currentMonth } from "../engage/ranks";
 import { CHECKS_TEXT, computeStreaks, headlineFor, perfectWeeks } from "../engage/stats";
@@ -24,7 +24,7 @@ engageRouter.get("/overview", async (c) => {
 
   let records;
   try {
-    records = await fetchAttendance(c.env, session.enrollmentId, year, monthName);
+    records = await getCachedAttendance(c.env, session.enrollmentId, year, monthName, 15);
   } catch (e) {
     return c.json({ error: e instanceof Error ? e.message : "Failed to fetch attendance" }, 500);
   }

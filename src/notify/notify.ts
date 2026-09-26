@@ -1,6 +1,7 @@
 import type { Env, User, AttendanceRecord } from "../types";
 import { sendFcmNotification } from "./firebase";
-import { fetchAttendance, fetchStudentProfile } from "../college/api";
+import { fetchStudentProfile } from "../college/api";
+import { getCachedAttendance } from "../engage/cache";
 
 interface Subscription {
   id: number;
@@ -307,7 +308,7 @@ export async function sendMonthlyReportEmail(
   try {
     const [p, r] = await Promise.all([
       fetchStudentProfile(env, enrollmentId),
-      fetchAttendance(env, enrollmentId, yVal, mName),
+      getCachedAttendance(env, enrollmentId, yVal, mName),
     ]);
     profile = p;
     records = r;

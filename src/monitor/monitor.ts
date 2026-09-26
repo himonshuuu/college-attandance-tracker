@@ -2,6 +2,7 @@ import { fetchAttendance, CollegeRequestError } from "../college/api";
 import { CollegeAuthError } from "../college/auth";
 import { notifyStudent, notifyAuthError, notifyNotUpdated, sendStreakEmail } from "../notify/notify";
 import { streakExcluding } from "../engage/stats";
+import { storeAttendance } from "../engage/cache";
 import {
   clearAuthError,
   classInstanceKey,
@@ -322,6 +323,8 @@ async function runStudentMonitorCycle(
   }
 
   summary.recordsFound = records.length;
+  // Warm the shared cache so views serve this fresh data without re-hitting the portal.
+  await storeAttendance(env, student.enrollment_id, india.year, india.monthName, records);
   let timetable;
   try {
     timetable = await learnTimetable(env, student.id, records);

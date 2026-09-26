@@ -1,4 +1,5 @@
-import { fetchAttendance } from "../college/api";
+import { getCachedAttendance } from "./cache";
+import { mapWithConcurrency } from "./pool";
 import { getIndiaDateTime } from "../time";
 import type { Env } from "../types";
 import { emailCard, escapeHtml } from "../notify/notify";
@@ -31,10 +32,12 @@ export async function computeMonthRanks(env: Env): Promise<RankEntry[]> {
   ).all<{ id: number; name: string; enrollment_id: string; email: string }>()
     .catch(() => ({ results: [] as { id: number; name: string; enrollment_id: string; email: string }[] }));
 
-  const entries = await Promise.all(
-    users.results.map(async (u) => {
+  const entries = await mapWithConcurrency(
+    users.results,
+    8,
+    async (u) => {
       try {
-        const records = await fetchAttendance(env, u.enrollment_id, year, monthName);
+        const records = await getCachedAttendance(env, u.enrollment_id, year, monthName);
         const total = records.length;
         const present = records.filter((r) => r.status === "Present").length;
         const absent = records.filter((r) => r.status === "Absent").length;
@@ -43,7 +46,7 @@ export async function computeMonthRanks(env: Env): Promise<RankEntry[]> {
       } catch {
         return { userId: u.id, enrollmentId: u.enrollment_id, name: u.name, email: u.email, total: 0, present: 0, absent: 0, pct: 0, rank: 0 };
       }
-    })
+    }
   );
 
   entries.sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
@@ -91,23 +94,23 @@ export async function checkRankChanges(env: Env): Promise<number> {
       if (!prev) {
         // First sighting this month — store silently, no alert.
         await env.DB.prepare(
-          `INSERT OR REPLACE INTO rank_snapshots (enrollment_id, month, rank, pct) VALUES (?, ?, ?, ?)`
-        ).bind(entry.enrollmentId, key, entry.rank, entry.pct).run().catch(() => {});
+          `INSERT OR REPLACE INTO rank_snapshots (enrollment_id, month, rank, pct, total, present, absent) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(entry.enrollmentId, key, entry.rank, entry.pct, entry.total, entry.present, entry.absent).run().catch(() => {});
         continue;
       }
 
       if (prev.rank !== entry.rank) {
         changes++;
         await env.DB.prepare(
-          `INSERT OR REPLACE INTO rank_snapshots (enrollment_id, month, rank, pct) VALUES (?, ?, ?, ?)`
-        ).bind(entry.enrollmentId, key, entry.rank, entry.pct).run().catch(() => {});
+          `INSERT OR REPLACE INTO rank_snapshots (enrollment_id, month, rank, pct, total, present, absent) VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(entry.enrollmentId, key, entry.rank, entry.pct, entry.total, entry.present, entry.absent).run().catch(() => {});
         if (entry.email) {
           await sendRankEmail(env, entry.email, entry.name || "there", prev.rank, entry.rank, ranks.length)
             .catch((err) => console.error(JSON.stringify({ event: "rank-email-failed", error: String(err) })));
         }
       } else if (prev) {
-        await env.DB.prepare(`UPDATE rank_snapshots SET pct = ? WHERE enrollment_id = ? AND month = ?`)
-          .bind(entry.pct, entry.enrollmentId, key).run().catch(() => {});
+        await env.DB.prepare(`UPDATE rank_snapshots SET pct = ?, total = ?, present = ?, absent = ? WHERE enrollment_id = ? AND month = ?`)
+          .bind(entry.pct, entry.total, entry.present, entry.absent, entry.enrollmentId, key).run().catch(() => {});
       }
     } catch (err) {
       console.error(JSON.stringify({ event: "rank-check-failed", error: String(err) }));

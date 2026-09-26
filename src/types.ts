@@ -4,7 +4,6 @@ export type AttendanceStatus = "Present" | "Absent";
 
 export interface Env {
   DB: D1Database;
-  ASSETS: { fetch: (req: Request) => Promise<Response> };
   COLLEGE_LOGIN_URL: string;
   COLLEGE_LOGIN_REFERER: string;
   COLLEGE_PROFILE_URL: string;
