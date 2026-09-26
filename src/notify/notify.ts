@@ -18,7 +18,7 @@ export async function getSubscriptions(env: Env, enrollmentId: string): Promise<
   return result.results;
 }
 
-async function sendEmail(env: Env, to: string, subject: string, text: string, html?: string): Promise<void> {
+export async function sendEmail(env: Env, to: string, subject: string, text: string, html?: string): Promise<void> {
   if (!env.RESEND_API_KEY) {
     console.warn("RESEND_API_KEY is not configured.");
     return;
@@ -41,6 +41,44 @@ async function sendEmail(env: Env, to: string, subject: string, text: string, ht
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error(`Resend API Error ${res.status}`);
+}
+
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Shared HTML email template — every email uses this same card design
+ * (white card, slate heading/body text, blue CTA button, muted footer).
+ */
+export function emailCard(opts: {
+  heading: string;
+  introHtml: string;
+  button?: { label: string; url: string };
+  bodyHtml?: string;
+  footerHtml?: string;
+  wide?: boolean;
+}): string {
+  const maxWidth = opts.wide ? "650px" : "520px";
+  return `<div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;max-width:${maxWidth};margin:0 auto;padding:24px;background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;">
+      <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">${opts.heading}</h2>
+      <p style="margin:0 0 16px;font-size:14px;color:#475569;">${opts.introHtml}</p>
+      ${opts.button ? `<a href="${opts.button.url}" style="display:inline-block;padding:12px 20px;background:#2563eb;color:#ffffff;text-decoration:none;border-radius:10px;font-size:14px;font-weight:700;">${opts.button.label}</a>` : ""}
+      ${opts.bodyHtml || ""}
+      <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">${opts.footerHtml || "— Attendance Monitor"}</p>
+    </div>`;
+}
+
+function detailRows(rows: Array<[string, string]>): string {
+  return `<table style="width:100%;border-collapse:collapse;margin-top:4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;font-size:13px;">` +
+    rows.map(([label, value]) =>
+      `<tr><td style="padding:8px 12px;color:#64748b;width:40%;">${label}</td><td style="padding:8px 12px;color:#0f172a;font-weight:600;">${value}</td></tr>`
+    ).join("") +
+    `</table>`;
 }
 
 async function notifyDiscord(env: Env, student: User, record: AttendanceRecord): Promise<void> {
@@ -84,11 +122,25 @@ export async function notifyStudent(
   for (const sub of subs) {
     try {
       if (sub.method === "email" && sub.email) {
+        const statusUpper = (record.status || "Marked").toUpperCase();
+        const badgeStyle = present
+          ? "background:#dcfce7;color:#15803d;"
+          : "background:#fee2e2;color:#b91c1c;";
         await sendEmail(
           env,
           sub.email,
           `${title} — ${record.subject}`,
-          `Hi ${student.name},\n\nYou were marked ${record.status?.toUpperCase()} for ${record.subject}.\n\nDate: ${record.date}\nTime: ${record.classTiming}\nTeacher: ${record.teacher}\n\n— Attendance Monitor`
+          `Hi ${student.name},\n\nYou were marked ${statusUpper} for ${record.subject}.\n\nDate: ${record.date}\nTime: ${record.classTiming}\nTeacher: ${record.teacher}\n\n— Attendance Monitor`,
+          emailCard({
+            heading: `${title} — ${escapeHtml(record.subject)}`,
+            introHtml: `Hi ${escapeHtml(student.name)}, you were marked <strong>${statusUpper}</strong> for <strong>${escapeHtml(record.subject)}</strong>.`,
+            bodyHtml: `<div style="margin-top:4px;"><span style="display:inline-block;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;${badgeStyle}">${statusUpper}</span></div>` +
+              detailRows([
+                ["Date", escapeHtml(record.date)],
+                ["Time", escapeHtml(record.classTiming || "—")],
+                ["Teacher", escapeHtml(record.teacher || "—")],
+              ]),
+          })
         );
       } else if ((sub.method === "firebase" || sub.method === "browser") && sub.push_subscription) {
         // push_subscription contains the FCM token (or JSON with token property)
@@ -177,7 +229,63 @@ export async function sendWelcomeEmail(env: Env, email: string, enrollmentId: st
     env,
     email,
     "Welcome to Attendance Monitor",
-    `Hi,\n\nWelcome to Attendance Monitor! Your account has been created.\n\nEnrollment ID: ${enrollmentId}\n\nYou will now receive notifications when your attendance is marked in class.\n\n— Attendance Monitor`
+    `Hi,\n\nWelcome to Attendance Monitor! Your account has been created.\n\nEnrollment ID: ${enrollmentId}\n\nYou will now receive notifications when your attendance is marked in class.\n\n— Attendance Monitor`,
+    emailCard({
+      heading: "Welcome to Attendance Monitor",
+      introHtml: "Your account has been created. You will now receive notifications when your attendance is marked in class.",
+      bodyHtml: detailRows([["Email", escapeHtml(email)], ["Enrollment ID", escapeHtml(enrollmentId)]]),
+    })
+  );
+}
+
+export async function sendStreakEmail(
+  env: Env,
+  email: string,
+  name: string,
+  kind: "broken" | "milestone",
+  streak: number,
+): Promise<void> {
+  const safeName = escapeHtml((name || "there").split(" ")[0]);
+  if (kind === "broken") {
+    await sendEmail(
+      env,
+      email,
+      "Your attendance streak ended — start a new one 💪",
+      `Hi ${name},\n\nYour ${streak}-class attendance streak just ended with an absent. Don't let one miss stop you — attend the next class to start a fresh streak!\n\n— Attendance Monitor`,
+      emailCard({
+        heading: `Streak ended at ${streak} 🔥`,
+        introHtml: `Hi ${safeName}, your <strong>${streak}-class streak</strong> just ended with an absent. One miss doesn't erase your progress — attend the next class to start a fresh streak!`,
+        footerHtml: "Streak update • Attendance Monitor",
+      }),
+    );
+  } else {
+    await sendEmail(
+      env,
+      email,
+      `${streak}-class attendance streak! 🔥`,
+      `Hi ${name},\n\nAmazing — you've attended ${streak} classes in a row! Keep it going.\n\n— Attendance Monitor`,
+      emailCard({
+        heading: `${streak}-class streak! 🔥`,
+        introHtml: `Hi ${safeName}, amazing consistency — you've attended <strong>${streak} classes in a row</strong>! Keep it going and watch your rank climb.`,
+        footerHtml: "Streak milestone • Attendance Monitor",
+      }),
+    );
+  }
+}
+
+export async function sendPasswordResetEmail(env: Env, email: string, resetLink: string): Promise<void> {
+  await sendEmail(
+    env,
+    email,
+    "Reset your Attendance Monitor password",
+    `Hi,\n\nWe received a request to reset the password for your Attendance Monitor account (${email}).\n\nReset your password using this link (valid for 1 hour, single use):\n${resetLink}\n\nIf you did not request this, you can safely ignore this email — your password will not change.\n\n— Attendance Monitor`,
+    emailCard({
+      heading: "Reset your password",
+      introHtml: `We received a request to reset the password for <strong>${escapeHtml(email)}</strong>. Click the button below (valid for 1 hour, single use):`,
+      button: { label: "Reset password", url: resetLink },
+      bodyHtml: `<p style="margin:16px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">Or copy this link:<br/>${escapeHtml(resetLink)}</p>`,
+      footerHtml: "If you did not request this, you can safely ignore this email.",
+    })
   );
 }
 
@@ -235,7 +343,7 @@ export async function sendMonthlyReportEmail(
     .map(
       (s) => `
       <tr>
-        <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:600;color:#1e293b;">${s.name}</td>
+        <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:600;color:#1e293b;">${escapeHtml(s.name)}</td>
         <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#16a34a;font-weight:600;">${s.present}</td>
         <td style="padding:10px;border-bottom:1px solid #e2e8f0;color:#dc2626;font-weight:600;">${s.absent}</td>
         <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:600;color:#475569;">${s.total}</td>
@@ -249,10 +357,10 @@ export async function sendMonthlyReportEmail(
     .map(
       (r) => `
       <tr>
-        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap;font-weight:600;color:#334155;">${r.date}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-weight:500;color:#0f172a;">${r.subject}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#64748b;">${r.teacher || "—"}</td>
-        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#64748b;">${r.classTiming || "—"}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;white-space:nowrap;font-weight:600;color:#334155;">${escapeHtml(r.date)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-weight:500;color:#0f172a;">${escapeHtml(r.subject)}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#64748b;">${escapeHtml(r.teacher || "—")}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;color:#64748b;">${escapeHtml(r.classTiming || "—")}</td>
         <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;">
           <span style="display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;font-weight:700;${
             r.status === "Present"
@@ -274,20 +382,16 @@ export async function sendMonthlyReportEmail(
         <title>Monthly Attendance Report - ${mName} ${yVal}</title>
       </head>
       <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#0f172a;margin:0;padding:20px;background:#f8fafc;line-height:1.5;">
-        <div style="max-width:650px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;padding:24px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.05);">
-          
-          <!-- Header Bar -->
-          <div style="border-bottom:2px solid #2563eb;padding-bottom:16px;margin-bottom:20px;">
-            <h1 style="font-size:20px;font-weight:800;color:#1e3a8a;margin:0;">College Attendance Monthly Report</h1>
-            <div style="font-size:12px;color:#64748b;margin-top:4px;">Official Attendance Summary for ${mName} ${yVal}</div>
-          </div>
+        <div style="max-width:650px;margin:0 auto;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;padding:24px;">
+          <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a;">Monthly Attendance Report</h2>
+          <p style="margin:0 0 16px;font-size:14px;color:#475569;">Official attendance summary for <strong>${mName} ${yVal}</strong> — ${escapeHtml(profile.name)} (${escapeHtml(enrollmentId)}).</p>
 
           <!-- Student Meta Grid -->
           <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;margin-bottom:20px;font-size:12px;">
-            <div style="margin-bottom:4px;"><span style="color:#64748b;">Student Name:</span> <strong style="color:#0f172a;">${profile.name}</strong></div>
-            <div style="margin-bottom:4px;"><span style="color:#64748b;">Enrollment ID:</span> <strong style="color:#0f172a;">${enrollmentId}</strong></div>
-            <div style="margin-bottom:4px;"><span style="color:#64748b;">Class & Section:</span> <strong style="color:#0f172a;">${profile.className}</strong></div>
-            <div><span style="color:#64748b;">Stream:</span> <strong style="color:#0f172a;">${profile.stream}</strong></div>
+            <div style="margin-bottom:4px;"><span style="color:#64748b;">Student Name:</span> <strong style="color:#0f172a;">${escapeHtml(profile.name)}</strong></div>
+            <div style="margin-bottom:4px;"><span style="color:#64748b;">Enrollment ID:</span> <strong style="color:#0f172a;">${escapeHtml(enrollmentId)}</strong></div>
+            <div style="margin-bottom:4px;"><span style="color:#64748b;">Class & Section:</span> <strong style="color:#0f172a;">${escapeHtml(profile.className)}</strong></div>
+            <div><span style="color:#64748b;">Stream:</span> <strong style="color:#0f172a;">${escapeHtml(profile.stream)}</strong></div>
           </div>
 
           <!-- Stats Grid -->
@@ -354,9 +458,7 @@ export async function sendMonthlyReportEmail(
             </tbody>
           </table>
 
-          <div style="margin-top:24px;border-top:1px solid #e2e8f0;padding-top:12px;font-size:10px;color:#94a3b8;text-align:center;">
-            Automated Monthly Report • College Attendance Monitor
-          </div>
+          <p style="margin:16px 0 0;font-size:12px;color:#94a3b8;">— Attendance Monitor</p>
         </div>
       </body>
     </html>
@@ -397,7 +499,12 @@ export async function sendTestNotification(
           env,
           sub.email,
           "Test Notification",
-          "Your attendance notifications are working! You will receive alerts here when your attendance is marked.\n\n— Attendance Monitor"
+          "Your attendance notifications are working! You will receive alerts here when your attendance is marked.\n\n— Attendance Monitor",
+          emailCard({
+            heading: "Notifications are working",
+            introHtml: "Your attendance notifications are working! You will receive alerts here when your attendance is marked.",
+            bodyHtml: detailRows([["Enrollment ID", escapeHtml(enrollmentId)]]),
+          })
         );
         result.email = true;
       } else if (sub.method === "monthly_report" && sub.email) {

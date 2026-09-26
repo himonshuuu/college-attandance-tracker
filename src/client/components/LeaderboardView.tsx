@@ -14,6 +14,7 @@ interface LeaderboardData {
   month: string;
   year: number;
   totalStudents: number;
+  checksText?: string;
 }
 
 function initials(name: string): string {
@@ -45,8 +46,28 @@ export const LeaderboardView: React.FC = () => {
     return <div className="text-center py-12 text-slate-400 text-sm">Loading leaderboard...</div>;
   }
 
-  if (error || !data || !data.students || data.students.length === 0) {
-    return <div className="text-center py-12 text-slate-400 text-sm">No students registered yet.</div>;
+  if (error) {
+    return (
+      <div className="text-center py-12 px-6">
+        <div className="text-3xl mb-2">📶</div>
+        <p className="text-slate-500 text-sm font-medium">{error}</p>
+        <p className="text-slate-400 text-xs mt-1">Ranks refresh after every class check.</p>
+      </div>
+    );
+  }
+
+  if (!data || !data.students || data.students.length === 0) {
+    return (
+      <div className="text-center py-12 px-6">
+        <div className="text-3xl mb-2">🏁</div>
+        <p className="text-slate-500 text-sm font-medium">The leaderboard is empty.</p>
+        <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+          Ranks appear once classmates join and classes are marked.
+          <br />
+          {data?.checksText ? `Checks run ${data.checksText}.` : "Checks run after every class."}
+        </p>
+      </div>
+    );
   }
 
   const { students } = data;
@@ -136,15 +157,14 @@ export const LeaderboardView: React.FC = () => {
       )}
 
       {/* Full Students List */}
-      <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-        {students.map((st, i) => {
+      <div className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">        {students.map((st, i) => {
           const c = st.pct >= 75 ? "#16a34a" : st.pct >= 60 ? "#d97706" : "#dc2626";
           const rankClass = i === 0 ? "rank-1" : i === 1 ? "rank-2" : i === 2 ? "rank-3" : "";
 
           return (
             <div
               key={i}
-              className={`flex items-center gap-3 px-4 py-3 ${rankClass} ${i % 2 === 1 ? "bg-slate-50" : ""}`}
+              className={`flex items-center gap-3 px-4 py-3 min-h-[56px] ${rankClass} ${i % 2 === 1 ? "bg-slate-50" : ""}`}
             >
               <div className="rank-num w-7 text-sm font-bold text-slate-400 text-center shrink-0">{i + 1}</div>
               <div className="flex-1 min-w-0">
@@ -164,6 +184,10 @@ export const LeaderboardView: React.FC = () => {
           );
         })}
       </div>
+      <p className="text-center text-[11px] text-slate-400 mt-4 leading-relaxed">
+        Ranks update after every class check. Climb or slip and we'll email you. ✉️
+        {data.checksText ? <><br />{data.checksText}</> : null}
+      </p>
     </div>
   );
 };

@@ -3,9 +3,10 @@ import React, { useState } from "react";
 interface LoginViewProps {
   onLoginSuccess: () => void;
   onSwitchToRegister: () => void;
+  onForgotPassword: () => void;
 }
 
-export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onSwitchToRegister }) => {
+export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onSwitchToRegister, onForgotPassword }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -92,6 +93,12 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onSwitchTo
             {loading ? "Signing In..." : "Sign In"}
           </button>
         </form>
+
+        <p className="mt-3 text-center text-xs">
+          <button type="button" onClick={onForgotPassword} className="text-blue-600 font-semibold border-none bg-transparent cursor-pointer">
+            Forgot password?
+          </button>
+        </p>
 
         {error && <div className="msg msg-error show mt-3.5 p-3 rounded-xl text-sm">{error}</div>}
 

@@ -1,6 +1,7 @@
 import { fetchAttendance, CollegeRequestError } from "../college/api";
 import { CollegeAuthError } from "../college/auth";
-import { notifyStudent, notifyAuthError, notifyNotUpdated } from "../notify/notify";
+import { notifyStudent, notifyAuthError, notifyNotUpdated, sendStreakEmail } from "../notify/notify";
+import { streakExcluding } from "../engage/stats";
 import {
   clearAuthError,
   classInstanceKey,
@@ -78,6 +79,37 @@ function slotKey(date: string, currentMinute: number): string {
   return `${date}|${currentMinute.toString().padStart(4, "0")}`;
 }
 
+/** Engagement #1: streak-broken and streak-milestone emails after a class is marked. */
+async function maybeNotifyStreak(
+  env: Env,
+  student: User,
+  record: AttendanceRecord,
+  allRecords: AttendanceRecord[],
+  actions: MonitorAction[],
+): Promise<void> {
+  try {
+    const prior = streakExcluding(allRecords, {
+      date: record.date,
+      subject: record.subject,
+      startTime: record.startTime,
+    });
+    const kind =
+      record.status === "Absent" && prior >= 3 ? "broken"
+      : record.status === "Present" && (prior + 1 === 5 || prior + 1 === 10) ? "milestone"
+      : null;
+    if (!kind) return;
+
+    const row = await env.DB.prepare(`SELECT email, name FROM users WHERE id = ?`)
+      .bind(student.id).first<{ email: string; name: string }>().catch(() => null);
+    if (!row || !row.email) return;
+
+    await sendStreakEmail(env, row.email, row.name || student.name, kind, kind === "broken" ? prior : prior + 1);
+    actions.push({ subject: record.subject, action: kind === "broken" ? "streak-broken-email" : "streak-milestone-email", status: record.status ?? undefined });
+  } catch (error) {
+    logError("streak-email", error);
+  }
+}
+
 function summaryBase(now: IndiaDateTime): MonitorSummary {
   return {
     success: true,
@@ -98,6 +130,7 @@ async function processClass(
   student: User,
   entry: TimetableEntry,
   record: AttendanceRecord | undefined,
+  allRecords: AttendanceRecord[],
   now: IndiaDateTime,
   attempt: { attempt: number; offset: number },
   actions: MonitorAction[],
@@ -141,6 +174,7 @@ async function processClass(
           status: record.status,
           attempt: attempt.attempt,
         });
+        await maybeNotifyStreak(env, student, record, allRecords, actions);
       } catch (error) {
         logError("notification-error", error);
         actions.push({
@@ -329,6 +363,7 @@ async function runStudentMonitorCycle(
       student,
       entry,
       findMatchingRecord(records, india.date, entry),
+      records,
       india,
       attempt,
       summary.actions,

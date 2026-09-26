@@ -35,6 +35,7 @@ interface AnalyticsData {
   subjects: SubjectStat[];
   daily: DailyStat[];
   records: AttendanceRecord[];
+  checksText?: string;
 }
 
 const MONTHS = [
@@ -452,6 +453,16 @@ export const AnalyticsView: React.FC = () => {
 
   return (
     <div>
+      {/* No-data teaching banner */}
+      {total === 0 && (
+        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4">
+          <p className="text-xs font-semibold text-blue-800 mb-1">📅 No classes recorded for {data.month} {data.year} yet</p>
+          <p className="text-[11px] text-blue-600 leading-relaxed">
+            {data.checksText ? `Attendance is checked ${data.checksText}. Come back after your first class today — your charts will appear here.` : "Come back after your first class today — your charts will appear here."}
+          </p>
+        </div>
+      )}
+
       {/* Month, Year & Action Bar */}
       <div className="bg-white rounded-2xl p-4 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">

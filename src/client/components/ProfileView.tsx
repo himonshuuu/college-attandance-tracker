@@ -12,32 +12,94 @@ interface ProfileData {
   subscriptions?: string[];
 }
 
+interface Badge {
+  id: string;
+  name: string;
+  desc: string;
+  icon: string;
+  owned: boolean;
+  isNew: boolean;
+}
+
+interface Overview {
+  month: string;
+  year: number;
+  total: number;
+  present: number;
+  absent: number;
+  pct: number;
+  streak: { current: number; best: number };
+  perfectWeeks: number;
+  rank: number | null;
+  totalStudents: number;
+  badges: Badge[];
+  headline: string;
+  checksText: string;
+  error?: string;
+}
+
 function initials(name: string): string {
   if (!name) return "S";
   return name.split(/\s+/).map(w => w[0]).slice(0, 2).join("").toUpperCase();
 }
 
+async function shareText(text: string): Promise<"shared" | "copied" | "failed"> {
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: "Attendance Monitor", text });
+      return "shared";
+    }
+    await navigator.clipboard.writeText(text);
+    return "copied";
+  } catch {
+    try {
+      await navigator.clipboard.writeText(text);
+      return "copied";
+    } catch {
+      return "failed";
+    }
+  }
+}
+
 export const ProfileView: React.FC = () => {
   const [data, setData] = useState<ProfileData | null>(null);
   const [subs, setSubs] = useState<string[]>([]);
+  const [overview, setOverview] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shareMsg, setShareMsg] = useState("");
 
   useEffect(() => {
     Promise.all([
       fetch("/api/profile").then((r) => r.json() as Promise<ProfileData & { error?: string }>),
       fetch("/api/subscribe").then((r) => r.json() as Promise<{ methods?: string[] }>),
+      fetch("/api/engage/overview").then((r) => r.json() as Promise<Overview>).catch(() => null),
     ])
-      .then(([profileData, subData]) => {
+      .then(([profileData, subData, overviewData]) => {
         if (profileData.error) throw new Error(profileData.error);
         setData(profileData);
         if (subData && subData.methods) {
           setSubs(subData.methods);
         }
+        if (overviewData && !overviewData.error) {
+          setOverview(overviewData);
+        }
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleShare = async () => {
+    if (!overview) return;
+    setShareMsg("");
+    const text =
+      overview.streak.current >= 2
+        ? `I'm on a ${overview.streak.current}-class attendance streak (${overview.pct}% this month)! Can you beat it? 🔥`
+        : `I'm at ${overview.pct}% attendance this month on Attendance Monitor. Join me! 📊`;
+    const result = await shareText(text);
+    setShareMsg(result === "shared" ? "Shared!" : result === "copied" ? "Copied to clipboard!" : "Sharing not available on this device.");
+    window.setTimeout(() => setShareMsg(""), 3000);
+  };
 
   if (loading) {
     return <div className="text-center py-12 text-slate-400 text-sm">Loading profile...</div>;
@@ -90,6 +152,58 @@ export const ProfileView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Streak, rank & insight */}
+      {overview && (
+        <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
+          <p className="text-xs text-slate-500 leading-relaxed mb-4">{overview.headline}</p>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-orange-50 rounded-xl p-3 text-center">
+              <div className="text-xl font-black text-orange-500">🔥{overview.streak.current}</div>
+              <div className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Streak</div>
+            </div>
+            <div className="bg-amber-50 rounded-xl p-3 text-center">
+              <div className="text-xl font-black text-amber-600">
+                {overview.rank != null ? `#${overview.rank}` : "—"}
+              </div>
+              <div className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">
+                Rank{overview.totalStudents > 0 ? ` / ${overview.totalStudents}` : ""}
+              </div>
+            </div>
+            <div className="bg-blue-50 rounded-xl p-3 text-center">
+              <div className="text-xl font-black text-blue-600">{overview.pct}%</div>
+              <div className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">{overview.month}</div>
+            </div>
+          </div>
+          <div className="flex gap-2 mt-3 text-[11px] text-slate-400">
+            <span className="flex-1 text-center">Best streak: <strong className="text-slate-600">{overview.streak.best}</strong></span>
+            <span className="flex-1 text-center">Perfect weeks: <strong className="text-slate-600">{overview.perfectWeeks}</strong></span>
+          </div>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-full mt-3 py-2.5 rounded-xl border-none bg-slate-900 text-white text-xs font-semibold cursor-pointer min-h-[44px]"
+          >
+            Share My Progress 📤
+          </button>
+          {shareMsg && <p className="text-[11px] text-green-600 text-center mt-2 font-medium">{shareMsg}</p>}
+        </div>
+      )}
+
+      {/* Badges */}
+      {overview && overview.badges.some((b) => b.owned) && (
+        <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
+          <h3 className="text-sm font-semibold mb-3 text-slate-900">Achievements 🏅</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {overview.badges.filter((b) => b.owned).map((b) => (
+              <div key={b.id} className="bg-slate-50 rounded-xl p-2.5 text-center" title={b.desc}>
+                <div className="text-2xl">{b.icon}</div>
+                <div className="text-[10px] font-bold text-slate-700 mt-1 leading-tight">{b.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Discord Community Card */}
       <div className="bg-indigo-500 rounded-2xl p-5 mb-4 text-white shadow-md">

@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import type { HonoEnv } from "../middleware/auth";
 import { fetchAttendance } from "../college/api";
+import { CHECKS_TEXT } from "../engage/stats";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -22,7 +23,7 @@ leaderboardRouter.get("/", async (c) => {
     return c.json({ error: "Could not read students" }, 500);
   }
 
-  if (students.length === 0) return c.json({ students: [], month: monthName, year });
+  if (students.length === 0) return c.json({ students: [], month: monthName, year, checksText: CHECKS_TEXT });
 
   const entries = await Promise.all(
     students.map(async (s) => {
@@ -41,5 +42,5 @@ leaderboardRouter.get("/", async (c) => {
 
   entries.sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
 
-  return c.json({ students: entries, month: monthName, year, totalStudents: entries.length });
+  return c.json({ students: entries, month: monthName, year, totalStudents: entries.length, checksText: CHECKS_TEXT });
 });

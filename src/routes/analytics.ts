@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireAuth, type HonoEnv } from "../middleware/auth";
 import { fetchAttendance, fetchStudentProfile } from "../college/api";
+import { CHECKS_TEXT } from "../engage/stats";
 
 const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
@@ -75,5 +76,6 @@ analyticsRouter.get("/", async (c) => {
     subjects,
     daily,
     records,
+    checksText: CHECKS_TEXT,
   });
 });

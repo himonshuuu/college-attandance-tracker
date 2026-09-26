@@ -6,6 +6,7 @@ COLLEGE_ORIGIN=
 COLLEGE_REFERER= 
 DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/replace/replace
 RESEND_API_KEY=re_xxxx...
+APP_URL=https://college-attendance-monitor.your-subdomain.workers.dev
 
 FIREBASE_PROJECT_ID=college-attandance-tracker-202
 FIREBASE_API_KEY=AIzaSyAem3j-vD6nYTAoqvG1p2IYYCFQ7FL1V8Y

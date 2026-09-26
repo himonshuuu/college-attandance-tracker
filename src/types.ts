@@ -4,6 +4,7 @@ export type AttendanceStatus = "Present" | "Absent";
 
 export interface Env {
   DB: D1Database;
+  ASSETS: { fetch: (req: Request) => Promise<Response> };
   COLLEGE_LOGIN_URL: string;
   COLLEGE_LOGIN_REFERER: string;
   COLLEGE_PROFILE_URL: string;
@@ -20,6 +21,7 @@ export interface Env {
   FIREBASE_PROJECT_ID?: string;
   FIREBASE_API_KEY?: string;
   FIREBASE_APP_ID?: string;
+  APP_URL?: string;
 }
 
 export interface User {
