@@ -167,6 +167,63 @@ authRouter.get("/me", (c) => {
   return c.json({ authenticated: true, email: session.email, enrollmentId: session.enrollmentId });
 });
 
+authRouter.post("/change-password", async (c) => {
+  const session = c.get("session");
+  if (!session) {
+    return c.json({ success: false, error: "Unauthorized / Session expired" }, 401);
+  }
+
+  let currentPassword = "";
+  let newPassword = "";
+  try {
+    const ct = c.req.header("content-type") || "";
+    if (ct.includes("application/x-www-form-urlencoded") || ct.includes("multipart/form-data")) {
+      const body = await c.req.parseBody();
+      currentPassword = String(body.currentPassword || body.current_password || "");
+      newPassword = String(body.newPassword || body.new_password || body.password || "");
+    } else {
+      const body = (await c.req.json()) as Record<string, unknown>;
+      currentPassword = String(body.currentPassword || body.current_password || "");
+      newPassword = String(body.newPassword || body.new_password || body.password || "");
+    }
+  } catch {
+    return c.json({ success: false, error: "Invalid request." }, 400);
+  }
+
+  if (!currentPassword || !newPassword) {
+    return c.json({ success: false, error: "Current and new password are required." }, 400);
+  }
+  if (newPassword.length < 6) {
+    return c.json({ success: false, error: "New password must be at least 6 characters." }, 400);
+  }
+  if (newPassword === currentPassword) {
+    return c.json({ success: false, error: "New password must be different from the current one." }, 400);
+  }
+
+  const user = await c.env.DB.prepare(`SELECT id, password_hash FROM users WHERE id = ?`)
+    .bind(session.userId).first<{ id: number; password_hash: string }>();
+  if (!user) {
+    return c.json({ success: false, error: "Account not found." }, 404);
+  }
+
+  const valid = await verifyPassword(currentPassword, user.password_hash);
+  if (!valid) {
+    return c.json({ success: false, error: "Current password is incorrect." }, 401);
+  }
+
+  const passwordHash = await hashPassword(newPassword);
+  await c.env.DB.prepare(`UPDATE users SET password_hash = ? WHERE id = ?`).bind(passwordHash, user.id).run();
+
+  // Keep this session alive, sign out all other devices.
+  const token = getTokenFromRequest(c.req.raw);
+  if (token) {
+    await c.env.DB.prepare(`DELETE FROM sessions WHERE user_id = ? AND token != ?`)
+      .bind(user.id, token).run().catch(() => {});
+  }
+
+  return c.json({ success: true, message: "Password changed. Other devices have been signed out." });
+});
+
 authRouter.post("/forgot-password", async (c) => {
   let email = "";
   try {

@@ -230,7 +230,7 @@ export const ProfileView: React.FC = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl p-5 sm:p-6">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
         <h3 className="text-sm font-semibold mb-3 text-slate-900">Subscriptions</h3>
         <div className="space-y-2">
           {subs.length === 0 ? (
@@ -245,6 +245,113 @@ export const ProfileView: React.FC = () => {
           )}
         </div>
       </div>
+
+      <ChangePasswordCard />
+    </div>
+  );
+};
+
+const ChangePasswordCard: React.FC = () => {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (newPassword.length < 6) {
+      setError("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirm) {
+      setError("New passwords do not match.");
+      return;
+    }
+    if (newPassword === currentPassword) {
+      setError("New password must be different from the current one.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = (await res.json()) as { message?: string; error?: string };
+      if (!res.ok || data.error) {
+        setError(data.error || "Could not change password.");
+      } else {
+        setSuccess(data.message || "Password changed.");
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirm("");
+      }
+    } catch {
+      setError("Network error. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-2xl p-5 sm:p-6">
+      <h3 className="text-sm font-semibold mb-1 text-slate-900">Change Password 🔒</h3>
+      <p className="text-[11px] text-slate-400 mb-4">Other devices will be signed out automatically.</p>
+      <form onSubmit={handleSubmit}>
+        <label htmlFor="cp-current" className="block text-xs font-semibold text-slate-600 mb-1.5">
+          Current password
+        </label>
+        <input
+          type="password"
+          id="cp-current"
+          value={currentPassword}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCurrentPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          className="w-full px-3.5 py-2.5 rounded-xl border-none bg-slate-100 text-sm outline-none mb-3 min-h-[44px]"
+        />
+        <label htmlFor="cp-new" className="block text-xs font-semibold text-slate-600 mb-1.5">
+          New password
+        </label>
+        <input
+          type="password"
+          id="cp-new"
+          value={newPassword}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)}
+          placeholder="Min 6 characters"
+          required
+          minLength={6}
+          autoComplete="new-password"
+          className="w-full px-3.5 py-2.5 rounded-xl border-none bg-slate-100 text-sm outline-none mb-3 min-h-[44px]"
+        />
+        <label htmlFor="cp-confirm" className="block text-xs font-semibold text-slate-600 mb-1.5">
+          Confirm new password
+        </label>
+        <input
+          type="password"
+          id="cp-confirm"
+          value={confirm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirm(e.target.value)}
+          required
+          minLength={6}
+          autoComplete="new-password"
+          className="w-full px-3.5 py-2.5 rounded-xl border-none bg-slate-100 text-sm outline-none mb-4 min-h-[44px]"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3 rounded-xl border-none bg-slate-900 text-white text-sm font-semibold cursor-pointer hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition min-h-[44px]"
+        >
+          {loading ? "Changing..." : "Change Password"}
+        </button>
+      </form>
+      {error && <div className="msg msg-error show mt-3.5 p-3 rounded-xl text-sm">{error}</div>}
+      {success && <div className="msg msg-success show mt-3.5 p-3 rounded-xl text-sm">{success}</div>}
     </div>
   );
 };
