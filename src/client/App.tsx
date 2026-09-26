@@ -130,7 +130,7 @@ export const App: React.FC = () => {
   const { title, subtitle } = showReset
     ? { title: "Attendance Monitor", subtitle: "Choose a new password" }
     : showWelcome && isAuthenticated
-      ? { title: "Welcome! 🎉", subtitle: "Here's your attendance at a glance" }
+      ? { title: "Welcome!", subtitle: "Here's your attendance at a glance" }
       : titleFor(effectiveRoute, userEmail);
 
   const backToLogin = () => {

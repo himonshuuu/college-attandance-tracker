@@ -63,7 +63,6 @@ async function shareText(text: string): Promise<"shared" | "copied" | "failed"> 
 
 export const ProfileView: React.FC = () => {
   const [data, setData] = useState<ProfileData | null>(null);
-  const [subs, setSubs] = useState<string[]>([]);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,15 +71,11 @@ export const ProfileView: React.FC = () => {
   useEffect(() => {
     Promise.all([
       fetch("/api/profile").then((r) => r.json() as Promise<ProfileData & { error?: string }>),
-      fetch("/api/subscribe").then((r) => r.json() as Promise<{ methods?: string[] }>),
       fetch("/api/engage/overview").then((r) => r.json() as Promise<Overview>).catch(() => null),
     ])
-      .then(([profileData, subData, overviewData]) => {
+      .then(([profileData, overviewData]) => {
         if (profileData.error) throw new Error(profileData.error);
         setData(profileData);
-        if (subData && subData.methods) {
-          setSubs(subData.methods);
-        }
         if (overviewData && !overviewData.error) {
           setOverview(overviewData);
         }
@@ -94,8 +89,8 @@ export const ProfileView: React.FC = () => {
     setShareMsg("");
     const text =
       overview.streak.current >= 2
-        ? `I'm on a ${overview.streak.current}-class attendance streak (${overview.pct}% this month)! Can you beat it? 🔥`
-        : `I'm at ${overview.pct}% attendance this month on Attendance Monitor. Join me! 📊`;
+        ? `I'm on a ${overview.streak.current}-class attendance streak (${overview.pct}% this month)! Can you beat it?`
+        : `I'm at ${overview.pct}% attendance this month on Attendance Monitor. Join me!`;
     const result = await shareText(text);
     setShareMsg(result === "shared" ? "Shared!" : result === "copied" ? "Copied to clipboard!" : "Sharing not available on this device.");
     window.setTimeout(() => setShareMsg(""), 3000);
@@ -159,7 +154,7 @@ export const ProfileView: React.FC = () => {
           <p className="text-xs text-slate-500 leading-relaxed mb-4">{overview.headline}</p>
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-orange-50 rounded-xl p-3 text-center">
-              <div className="text-xl font-black text-orange-500">🔥{overview.streak.current}</div>
+              <div className="text-xl font-black text-orange-500">{overview.streak.current}</div>
               <div className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Streak</div>
             </div>
             <div className="bg-amber-50 rounded-xl p-3 text-center">
@@ -184,7 +179,7 @@ export const ProfileView: React.FC = () => {
             onClick={handleShare}
             className="w-full mt-3 py-2.5 rounded-xl border-none bg-slate-900 text-white text-xs font-semibold cursor-pointer min-h-[44px]"
           >
-            Share My Progress 📤
+            Share My Progress
           </button>
           {shareMsg && <p className="text-[11px] text-green-600 text-center mt-2 font-medium">{shareMsg}</p>}
         </div>
@@ -193,7 +188,7 @@ export const ProfileView: React.FC = () => {
       {/* Badges */}
       {overview && overview.badges.some((b) => b.owned) && (
         <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
-          <h3 className="text-sm font-semibold mb-3 text-slate-900">Achievements 🏅</h3>
+          <h3 className="text-sm font-semibold mb-3 text-slate-900">Achievements</h3>
           <div className="grid grid-cols-3 gap-2">
             {overview.badges.filter((b) => b.owned).map((b) => (
               <div key={b.id} className="bg-slate-50 rounded-xl p-2.5 text-center" title={b.desc}>
@@ -227,22 +222,6 @@ export const ProfileView: React.FC = () => {
           >
             Join Chat →
           </a>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
-        <h3 className="text-sm font-semibold mb-3 text-slate-900">Subscriptions</h3>
-        <div className="space-y-2">
-          {subs.length === 0 ? (
-            <div className="text-xs text-slate-400">No active notification subscriptions.</div>
-          ) : (
-            subs.map((m, idx) => (
-              <div key={idx} className="flex items-center gap-2 text-xs font-medium text-slate-700 bg-slate-50 px-3 py-2 rounded-xl">
-                <div className="w-2 h-2 rounded-full bg-blue-600"></div>
-                {m === "firebase" || m === "browser" ? "Browser Push Notifications" : m === "email" ? "Email Alerts" : m === "monthly_report" ? "Monthly Report (End of Month)" : m}
-              </div>
-            ))
-          )}
         </div>
       </div>
 
@@ -300,7 +279,7 @@ const ChangePasswordCard: React.FC = () => {
 
   return (
     <div className="bg-white rounded-2xl p-5 sm:p-6">
-      <h3 className="text-sm font-semibold mb-1 text-slate-900">Change Password 🔒</h3>
+      <h3 className="text-sm font-semibold mb-1 text-slate-900">Change Password</h3>
       <p className="text-[11px] text-slate-400 mb-4">Other devices will be signed out automatically.</p>
       <form onSubmit={handleSubmit}>
         <label htmlFor="cp-current" className="block text-xs font-semibold text-slate-600 mb-1.5">

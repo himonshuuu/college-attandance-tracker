@@ -149,7 +149,7 @@ export const FriendsView: React.FC = () => {
                   onClick={() => act(r.id, "decline")}
                   className="px-3 py-2 rounded-xl border-none bg-slate-200 text-slate-600 text-xs font-semibold cursor-pointer min-h-[44px]"
                 >
-                  ✕
+                  ×
                 </button>
               </div>
             ))}
@@ -170,7 +170,7 @@ export const FriendsView: React.FC = () => {
               className="w-9 h-9 rounded-full bg-slate-100 text-slate-500 border-none cursor-pointer flex items-center justify-center"
               aria-label="Close comparison"
             >
-              ✕
+              ×
             </button>
           </div>
           {!compareLoading && compare && (
@@ -243,7 +243,6 @@ export const FriendsView: React.FC = () => {
         <p className="text-[11px] text-slate-400 mb-3">Tap a friend to compare subject-wise attendance.</p>
         {friends.length === 0 ? (
           <div className="text-center py-6">
-            <div className="text-3xl mb-2">👥</div>
             <p className="text-xs text-slate-500 font-medium">No friends yet.</p>
             <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
               Add a classmate below to compare attendance and push each other up the leaderboard.

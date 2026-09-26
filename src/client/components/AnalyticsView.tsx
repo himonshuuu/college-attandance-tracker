@@ -456,7 +456,7 @@ export const AnalyticsView: React.FC = () => {
       {/* No-data teaching banner */}
       {total === 0 && (
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-4">
-          <p className="text-xs font-semibold text-blue-800 mb-1">📅 No classes recorded for {data.month} {data.year} yet</p>
+          <p className="text-xs font-semibold text-blue-800 mb-1">No classes recorded for {data.month} {data.year} yet</p>
           <p className="text-[11px] text-blue-600 leading-relaxed">
             {data.checksText ? `Attendance is checked ${data.checksText}. Come back after your first class today — your charts will appear here.` : "Come back after your first class today — your charts will appear here."}
           </p>
@@ -759,7 +759,7 @@ export const AnalyticsView: React.FC = () => {
                 onClick={() => setActiveSubjectModal(null)}
                 className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center transition border-none cursor-pointer"
               >
-                ✕
+                ×
               </button>
             </div>
 

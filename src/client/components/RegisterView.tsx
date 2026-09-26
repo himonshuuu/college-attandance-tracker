@@ -100,7 +100,7 @@ export const RegisterView: React.FC<RegisterViewProps> = ({ onRegisterSuccess, o
             className="w-full px-3.5 py-2.5 rounded-xl border-none bg-slate-100 text-sm outline-none mb-2"
           />
           <p className="text-[11px] text-amber-600 mb-4 font-medium bg-amber-50 p-2.5 rounded-xl border border-amber-200/60">
-            📌 Note: ITEP students should enter their registered Mobile Number instead of Enrollment ID.
+            Note: ITEP students should enter their registered Mobile Number instead of Enrollment ID.
           </p>
 
           <button

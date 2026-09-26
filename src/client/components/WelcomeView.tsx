@@ -47,7 +47,6 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onContinue }) => {
 
         {!loading && (error || !data) && (
           <div className="text-center py-6">
-            <div className="text-4xl mb-3">👋</div>
             <h2 className="text-base font-bold text-slate-900 mb-1">Account created!</h2>
             <p className="text-xs text-slate-400 mb-4">
               {error || "We couldn't fetch your attendance just now — your profile is ready though."}
@@ -65,7 +64,6 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onContinue }) => {
         {!loading && data && (
           <>
             <div className="text-center mb-4">
-              <div className="text-4xl mb-2">🎉</div>
               <h2 className="text-base font-bold text-slate-900">Account created!</h2>
               <p className="text-xs text-slate-500 mt-1 leading-relaxed">{data.headline}</p>
             </div>
@@ -76,7 +74,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onContinue }) => {
                 <div className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">{data.month}</div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 text-center">
-                <div className="text-xl font-black text-orange-500">🔥{data.streak.current}</div>
+                <div className="text-xl font-black text-orange-500">{data.streak.current}</div>
                 <div className="text-[10px] font-semibold text-slate-400 uppercase mt-0.5">Streak</div>
               </div>
               <div className="bg-slate-50 rounded-xl p-3 text-center">

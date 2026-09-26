@@ -62,9 +62,8 @@ export const LeaderboardView: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-center py-12 px-6">
-        <div className="text-3xl mb-2">📶</div>
-        <p className="text-slate-500 text-sm font-medium">{error}</p>
+        <div className="text-center py-12 px-6">
+          <p className="text-slate-500 text-sm font-medium">{error}</p>
         <p className="text-slate-400 text-xs mt-1">Ranks refresh after every class check.</p>
       </div>
     );
@@ -73,7 +72,6 @@ export const LeaderboardView: React.FC = () => {
   if (!data || !data.students || data.students.length === 0) {
     return (
       <div className="text-center py-12 px-6">
-        <div className="text-3xl mb-2">{data?.building ? "⏳" : "🏁"}</div>
         <p className="text-slate-500 text-sm font-medium">
           {data?.building ? "Building the leaderboard..." : "The leaderboard is empty."}
         </p>
@@ -212,7 +210,7 @@ export const LeaderboardView: React.FC = () => {
         })}
       </div>
       <p className="text-center text-[11px] text-slate-400 mt-4 leading-relaxed">
-        Ranks refresh hourly — climb or slip and we'll email you. ✉️
+        Ranks refresh hourly — climb or slip and we'll email you.
         {data.checksText ? <><br />Checks run {data.checksText}.</> : null}
       </p>
     </div>
