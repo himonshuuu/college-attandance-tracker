@@ -55,9 +55,10 @@ leaderboardRouter.get("/", async (c) => {
     console.error(JSON.stringify({ event: "leaderboard-refresh-failed", error: String(err) }));
   }));
 
+  // Note: enrollment_id is intentionally excluded from the response —
+  // the leaderboard is public and it's private student info.
   const students = snap.results.map((r) => ({
     name: r.name,
-    enrollmentId: r.enrollment_id,
     total: r.total,
     present: r.present,
     absent: r.absent,

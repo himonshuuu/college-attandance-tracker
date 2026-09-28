@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { requireAuth, type HonoEnv } from "../middleware/auth";
 import { getCachedAttendance } from "../engage/cache";
+import { mapWithConcurrency } from "../engage/pool";
 import { awardBadges, BADGES, listBadges } from "../engage/badges";
 import { computeMonthRanks, currentMonth } from "../engage/ranks";
 import { CHECKS_TEXT, computeStreaks, headlineFor, perfectWeeks } from "../engage/stats";
@@ -91,5 +92,59 @@ engageRouter.get("/overview", async (c) => {
     joinedRecently,
     friendsCount: friends?.n ?? 0,
     checksText: CHECKS_TEXT,
+  });
+});
+
+const YEAR_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+/**
+ * Whole-year overall attendance: aggregates every available month of the
+ * given year (Jan through the current month for the ongoing year).
+ * Reads through the shared cache, so repeat views are instant.
+ */
+engageRouter.get("/yearly", async (c) => {
+  const session = c.get("session")!;
+  const now = new Date();
+  const year = Number(c.req.query("year") ?? now.getFullYear());
+  if (!year || year < 2020 || year > now.getFullYear() + 1) {
+    return c.json({ error: "Invalid year." }, 400);
+  }
+  const maxMonth = year === now.getFullYear() ? now.getMonth() + 1 : 12;
+  const months = YEAR_MONTHS.slice(0, maxMonth);
+
+  const perMonth = await mapWithConcurrency(months, 4, async (monthName) => {
+    try {
+      const records = await getCachedAttendance(c.env, session.enrollmentId, year, monthName);
+      const total = records.length;
+      const present = records.filter((r) => r.status === "Present").length;
+      const absent = records.filter((r) => r.status === "Absent").length;
+      return {
+        month: monthName,
+        total,
+        present,
+        absent,
+        pct: total > 0 ? Math.round((present / total) * 100) : 0,
+        hasData: true as const,
+      };
+    } catch {
+      return { month: monthName, total: 0, present: 0, absent: 0, pct: 0, hasData: false as const };
+    }
+  });
+
+  const withData = perMonth.filter((m) => m.hasData);
+  const total = withData.reduce((a, m) => a + m.total, 0);
+  const present = withData.reduce((a, m) => a + m.present, 0);
+  const absent = withData.reduce((a, m) => a + m.absent, 0);
+
+  return c.json({
+    year,
+    overall: {
+      total,
+      present,
+      absent,
+      pct: total > 0 ? Math.round((present / total) * 100) : 0,
+      monthsCount: withData.filter((m) => m.total > 0).length,
+    },
+    months: withData,
   });
 });

@@ -185,8 +185,9 @@ export const ProfileView: React.FC = () => {
         </div>
       )}
 
-      {/* Badges */}
-      {overview && overview.badges.some((b) => b.owned) && (
+      <YearAttendanceCard />
+
+      {/* Badges */}      {overview && overview.badges.some((b) => b.owned) && (
         <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
           <h3 className="text-sm font-semibold mb-3 text-slate-900">Achievements</h3>
           <div className="grid grid-cols-3 gap-2">
@@ -226,6 +227,91 @@ export const ProfileView: React.FC = () => {
       </div>
 
       <ChangePasswordCard />
+    </div>
+  );
+};
+
+interface YearMonth {
+  month: string;
+  total: number;
+  present: number;
+  absent: number;
+  pct: number;
+}
+
+interface YearlyData {
+  year: number;
+  overall: { total: number; present: number; absent: number; pct: number; monthsCount: number };
+  months: YearMonth[];
+  error?: string;
+}
+
+/** Whole-year overall attendance across every available month. */
+const YearAttendanceCard: React.FC = () => {
+  const [data, setData] = useState<YearlyData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/engage/yearly")
+      .then((res) => {
+        if (!res.ok) throw new Error("Could not load year stats");
+        return res.json();
+      })
+      .then((d: unknown) => {
+        const parsed = d as YearlyData & { error?: string };
+        if (parsed.error) throw new Error(parsed.error);
+        setData(parsed);
+      })
+      .catch(() => setData(null))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
+        <div className="text-xs text-slate-400 animate-pulse">Loading year overview...</div>
+      </div>
+    );
+  }
+
+  if (!data || data.overall.total === 0) return null;
+
+  const activeMonths = data.months.filter((m) => m.total > 0);
+  const color = data.overall.pct >= 75 ? "#16a34a" : data.overall.pct >= 60 ? "#d97706" : "#dc2626";
+
+  return (
+    <div className="bg-white rounded-2xl p-5 sm:p-6 mb-4">
+      <div className="flex items-end justify-between mb-1">
+        <h3 className="text-sm font-semibold text-slate-900">{data.year} Overall</h3>
+        <div className="text-2xl font-black" style={{ color }}>
+          {data.overall.pct}%
+        </div>
+      </div>
+      <p className="text-[11px] text-slate-400 mb-4">
+        {data.overall.present} of {data.overall.total} classes across {data.overall.monthsCount} month{data.overall.monthsCount === 1 ? "" : "s"}
+      </p>
+      <div className="h-3 bg-slate-100 rounded-full overflow-hidden mb-4">
+        <div className="h-full rounded-full" style={{ width: `${data.overall.pct}%`, background: color }}></div>
+      </div>
+      <div className="space-y-1.5">
+        {activeMonths.map((m) => {
+          const c = m.pct >= 75 ? "#16a34a" : m.pct >= 60 ? "#d97706" : "#dc2626";
+          return (
+            <div key={m.month} className="flex items-center gap-2.5">
+              <span className="w-20 text-[11px] font-semibold text-slate-500 shrink-0">{m.month.slice(0, 3)}</span>
+              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${m.pct}%`, background: c }}></div>
+              </div>
+              <span className="w-10 text-right text-[11px] font-bold shrink-0" style={{ color: c }}>
+                {m.pct}%
+              </span>
+              <span className="w-14 text-right text-[10px] text-slate-400 shrink-0">
+                {m.present}/{m.total}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 };

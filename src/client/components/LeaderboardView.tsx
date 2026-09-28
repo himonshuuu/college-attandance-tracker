@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 
 interface StudentLeaderboard {
   name: string;
-  enrollmentId: string;
   total: number;
   present: number;
   absent: number;
@@ -194,7 +193,6 @@ export const LeaderboardView: React.FC = () => {
               <div className="rank-num w-7 text-sm font-bold text-slate-400 text-center shrink-0">{i + 1}</div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-semibold text-slate-900 truncate">{st.name}</div>
-                <div className="text-[11px] text-slate-400">{st.enrollmentId}</div>
               </div>
               <div className="w-12 sm:w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
                 <div className="h-full rounded-full" style={{ width: `${st.pct}%`, background: c }}></div>
