@@ -204,10 +204,10 @@ export const App: React.FC = () => {
   const showChrome = isAuthenticated && !showReset && !showWelcome && APP_ROUTES.includes(effectiveRoute);
 
   return (
-    <div className="bg-slate-50 text-slate-900 min-h-screen p-4 sm:p-6 pb-24">
-      <div className="max-w-lg mx-auto">
+    <div className="bg-slate-50 text-slate-900 min-h-screen">
+      <div className="app-shell px-2 pt-4">
         {/* Header */}
-        <header className="flex items-center gap-3 mb-6">
+        <header className="app-header flex items-center gap-3 pb-3 mb-3 -mx-3 px-3">
           <div className="w-9 h-9 bg-blue-600 text-white rounded-[10px] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
             A
           </div>
@@ -227,12 +227,12 @@ export const App: React.FC = () => {
         </header>
 
         {/* Main Content Area */}
-        <main className="mb-12">{renderMain()}</main>
+        <main className="app-main">{renderMain()}</main>
 
         {/* Fixed Bottom Navbar */}
         {showChrome && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 p-3 bg-slate-50/90 backdrop-blur-md">
-            <div className="max-w-lg mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-50/90 backdrop-blur-md">
+            <div className="app-shell px-3 pt-2 app-tabbar">
               <Navbar activeTab={effectiveRoute} />
             </div>
           </div>

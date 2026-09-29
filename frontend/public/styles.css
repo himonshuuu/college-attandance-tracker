@@ -1,38 +1,222 @@
-input:focus{box-shadow:0 0 0 2px rgba(37,99,235,.25)}
-canvas{display:block}
+input:focus {
+	box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+canvas {
+	display: block;
+}
 
-.method-check{display:none}
-.method-card{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;background:#f1f5f9;cursor:pointer;transition:background .15s}
-.method-card:hover{background:#e2e8f0}
-.method-card.active, .method-card:has(input:checked){background:#eff6ff}
-.method-card .dot{width:20px;height:20px;border-radius:6px;background:#cbd5e1;display:flex;align-items:center;justify-content:center;shrink:0;transition:background .15s}
-.method-card.active .dot, .method-card:has(input:checked) .dot{background:#2563eb;color:#fff}
+.method-check {
+	display: none;
+}
+.method-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+	border-radius: 12px;
+	background: #f1f5f9;
+	cursor: pointer;
+	transition: background 0.15s;
+}
+.method-card:hover {
+	background: #e2e8f0;
+}
+.method-card.active,
+.method-card:has(input:checked) {
+	background: #eff6ff;
+}
+.method-card .dot {
+	width: 20px;
+	height: 20px;
+	border-radius: 6px;
+	background: #cbd5e1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	shrink: 0;
+	transition: background 0.15s;
+}
+.method-card.active .dot,
+.method-card:has(input:checked) .dot {
+	background: #2563eb;
+	color: #fff;
+}
 
-.extra{display:none}.extra.show{display:block}
+.extra {
+	display: none;
+}
+.extra.show {
+	display: block;
+}
 
-.msg{display:none}.msg.show{display:block}
-.msg-success{background:#f0fdf4;color:#16a34a}
-.msg-error{background:#fef2f2;color:#dc2626}
+.msg {
+	display: none;
+}
+.msg.show {
+	display: block;
+}
+.msg-success {
+	background: #f0fdf4;
+	color: #16a34a;
+}
+.msg-error {
+	background: #fef2f2;
+	color: #dc2626;
+}
 
-.podium-card.gold .pod-avatar{background:linear-gradient(135deg, #f59e0b, #d97706);color:#fff}.podium-card.gold .pod-pct{color:#d97706}
-.podium-card.silver .pod-avatar{background:linear-gradient(135deg, #94a3b8, #64748b);color:#fff}.podium-card.silver .pod-pct{color:#475569}
-.podium-card.bronze .pod-avatar{background:linear-gradient(135deg, #b45309, #78350f);color:#fff}.podium-card.bronze .pod-pct{color:#b45309}
+.podium-card.gold .pod-avatar {
+	background: linear-gradient(135deg, #f59e0b, #d97706);
+	color: #fff;
+}
+.podium-card.gold .pod-pct {
+	color: #d97706;
+}
+.podium-card.silver .pod-avatar {
+	background: linear-gradient(135deg, #94a3b8, #64748b);
+	color: #fff;
+}
+.podium-card.silver .pod-pct {
+	color: #475569;
+}
+.podium-card.bronze .pod-avatar {
+	background: linear-gradient(135deg, #b45309, #78350f);
+	color: #fff;
+}
+.podium-card.bronze .pod-pct {
+	color: #b45309;
+}
 
-.rank-1 .rank-num{color:#f59e0b}
-.rank-2 .rank-num{color:#94a3b8}
-.rank-3 .rank-num{color:#d97706}
+.rank-1 .rank-num {
+	color: #f59e0b;
+}
+.rank-2 .rank-num {
+	color: #94a3b8;
+}
+.rank-3 .rank-num {
+	color: #d97706;
+}
 
-.td-responsive{display:table-cell}
-@media(max-width:640px){.td-responsive{display:none}}
+.td-responsive {
+	display: table-cell;
+}
+@media (max-width: 640px) {
+	.td-responsive {
+		display: none;
+	}
+}
 
-.nav-tabs{display:flex;gap:4px;padding:6px;background:#f1f5f9;border-radius:16px}
-.nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;flex:1;padding:8px 4px;border-radius:12px;text-decoration:none;font-size:10px;font-weight:600;color:#94a3b8;transition:all .15s}
-.nav-tab:hover{background:#e2e8f0;color:#64748b}
-.nav-tab.active{background:#fff;color:#2563eb;box-shadow:0 1px 3px rgba(0,0,0,.08)}
-.nav-tab span{display:block;font-size:10px;line-height:1;text-align:center}
-.nav-icon{width:20px;height:20px;flex-shrink:0}
-@media(min-width:640px){
-  .nav-tab{flex-direction:row;gap:6px;padding:10px 12px;font-size:12px}
-  .nav-tab span{font-size:12px}
-  .nav-icon{width:18px;height:18px}
+.nav-tabs {
+	display: flex;
+	gap: 4px;
+	padding: 6px;
+	background: #f1f5f9;
+	border-radius: 16px;
+}
+.nav-tab {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 3px;
+	flex: 1;
+	padding: 8px 4px;
+	border-radius: 12px;
+	text-decoration: none;
+	font-size: 10px;
+	font-weight: 600;
+	color: #94a3b8;
+	transition: all 0.15s;
+}
+.nav-tab:hover {
+	background: #e2e8f0;
+	color: #64748b;
+}
+.nav-tab.active {
+	background: #fff;
+	color: #2563eb;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.nav-tab span {
+	display: block;
+	font-size: 10px;
+	line-height: 1;
+	text-align: center;
+}
+.nav-icon {
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+}
+/* Tabs stay stacked icon-over-label at every size: native bottom-bar feel. */
+
+/* ---- Mobile-app shell: makes the web app feel like a native phone app ---- */
+html {
+	-webkit-text-size-adjust: 100%;
+	-webkit-tap-highlight-color: transparent;
+}
+body {
+	overscroll-behavior-y: contain;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+/* 16px+ inputs stop iOS Safari auto-zooming on focus */
+input,
+select,
+textarea {
+	font-size: 16px;
+}
+/* Kill double-tap zoom delay on everything tappable */
+button,
+a,
+.nav-tab,
+.method-card {
+	touch-action: manipulation;
+	user-select: none;
+	-webkit-user-select: none;
+}
+/* Native-like press feedback */
+button:active,
+a:active,
+.method-card:active {
+	transform: scale(0.98);
+}
+button,
+a,
+.method-card {
+	transition: transform 0.1s ease;
+}
+/* Phone column: full-bleed on phones, centered 430px app column on larger screens */
+.app-shell {
+	width: 100%;
+	max-width: 430px;
+	margin-left: auto;
+	margin-right: auto;
+	min-height: 100dvh;
+}
+/* Sticky blurred app bar under the notch */
+.app-header {
+	position: sticky;
+	top: 0;
+	z-index: 40;
+	padding-top: env(safe-area-inset-top);
+	background: rgba(248, 250, 252, 0.88);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+/* Bottom tab bar clears the home indicator */
+.app-tabbar {
+	padding-bottom: env(safe-area-inset-bottom);
+}
+/* Content never hides under the tab bar */
+.app-main {
+	padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+/* Native-feel scrolling for horizontal carousels/lists */
+.scroll-x {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+}
+.scroll-x::-webkit-scrollbar {
+	display: none;
 }

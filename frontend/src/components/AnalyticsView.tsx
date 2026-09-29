@@ -120,14 +120,14 @@ export const AnalyticsView: React.FC = () => {
     canvas.style.height = H + "px";
     ctx.scale(dpr, dpr);
 
-    const daily = data.daily || [];
+    const daily = (data.daily || []).slice(-7);
     ctx.clearRect(0, 0, W, H);
 
     if (daily.length === 0) {
       ctx.fillStyle = "#94a3b8";
       ctx.font = "13px system-ui";
       ctx.textAlign = "center";
-      ctx.fillText("No data yet for this month", W / 2, H / 2);
+      ctx.fillText("No classes in the last 7 days", W / 2, H / 2);
       return;
     }
 
@@ -613,7 +613,7 @@ export const AnalyticsView: React.FC = () => {
 
       {/* Daily Attendance Trend */}
       <div className="bg-white rounded-2xl p-5 mb-4">
-        <h2 className="text-sm font-semibold mb-3 text-slate-900">Daily Attendance Trend</h2>
+        <h2 className="text-sm font-semibold mb-3 text-slate-900">Last 7 Days</h2>
         <canvas ref={trendCanvasRef} height="200"></canvas>
         <div className="flex flex-wrap gap-3 mt-3">
           <div className="flex items-center gap-1.5 text-xs text-slate-400">
