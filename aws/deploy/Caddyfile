@@ -1,6 +1,5 @@
-# The server currently exposes the app over HTTP by IP. Replace this address with the
-# real DNS name once it points at this instance; Caddy will then provision TLS.
-http://13.233.147.195 {
+# Caddy provisions and renews HTTPS automatically for this DNS name.
+attendance.himon.in {
   encode gzip
 
   log {

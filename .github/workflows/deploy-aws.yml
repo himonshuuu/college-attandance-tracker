@@ -39,6 +39,7 @@ jobs:
         run: |
           tar -czf frontend.tar.gz -C aws/frontend/dist .
           tar -czf backend.tar.gz -C aws/backend dist migrations package.json pnpm-lock.yaml
+          cp aws/deploy/Caddyfile Caddyfile
 
       - name: Configure SSH
         env:
@@ -55,6 +56,8 @@ jobs:
             "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-frontend-${{ github.sha }}.tar.gz"
           scp -i ~/.ssh/deploy_key backend.tar.gz \
             "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-backend-${{ github.sha }}.tar.gz"
+          scp -i ~/.ssh/deploy_key Caddyfile \
+            "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-Caddyfile-${{ github.sha }}"
 
       - name: Activate release
         env:
@@ -74,8 +77,17 @@ jobs:
           sudo systemctl daemon-reload
           sudo systemctl enable college-attendance-api
           sudo systemctl restart college-attendance-api
+          sudo install -o root -g root -m 0644 "/tmp/attendance-Caddyfile-${RELEASE_SHA}" /etc/caddy/Caddyfile
           sudo caddy validate --config /etc/caddy/Caddyfile
           sudo systemctl reload caddy
-          curl --fail --silent http://127.0.0.1:4000/api/health
-          rm -f "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-backend-${RELEASE_SHA}.tar.gz"
+          healthy=0
+          for attempt in $(seq 1 20); do
+            if curl --fail --silent http://127.0.0.1:4000/api/health; then
+              healthy=1
+              break
+            fi
+            sleep 1
+          done
+          test "$healthy" = 1
+          rm -f "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-backend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-Caddyfile-${RELEASE_SHA}"
           REMOTE
