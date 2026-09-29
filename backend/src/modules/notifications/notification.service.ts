@@ -112,12 +112,13 @@ export async function sendPasswordResetEmail(
 	await sendEmail(
 		email,
 		"Reset your Attendance Monitor password",
-		`Hi,\n\nWe received a request to reset the password for your Attendance Monitor account (${email}).\n\nReset your password using this link (valid for 1 hour, single use):\n${resetLink}\n\nIf you did not request this, you can safely ignore this email.\n\n— Attendance Monitor`,
+		`Hi,\n\nWe received a request to reset the password for your Attendance Monitor account (${email}).\n\nReset your password using this link (valid for 1 hour, single use):\n${resetLink}\n\nDidn't ask for this? Someone may have typed your email by mistake — just ignore and delete this email. Your password stays the same.\n\n— Attendance Monitor`,
 		emailCard({
 			heading: "Reset your password",
 			introHtml: `We received a request to reset the password for <strong>${escapeHtml(email)}</strong>. Click the button below (valid for 1 hour, single use):`,
 			button: { label: "Reset password", url: resetLink },
-			bodyHtml: `<p style="margin:16px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">Or copy this link:<br/>${escapeHtml(resetLink)}</p>`,
+			bodyHtml: `<p style="margin:16px 0 0;font-size:12px;color:#94a3b8;word-break:break-all;">Or copy this link:<br/>${escapeHtml(resetLink)}</p>
+				<p style="margin:16px 0 0;padding:12px;border-radius:10px;background:#f8fafc;font-size:13px;color:#475569;"><strong>Didn't ask for this?</strong> Someone may have typed your email by mistake — just ignore and delete this email. Your password stays the same.</p>`,
 			footerHtml:
 				"If you did not request this, you can safely ignore this email.",
 		}),

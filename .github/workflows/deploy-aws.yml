@@ -41,6 +41,12 @@ jobs:
           tar -czf backend.tar.gz -C backend dist migrations package.json pnpm-lock.yaml
           cp deploy/Caddyfile Caddyfile
 
+      - name: Write prod env file from secret
+        env:
+          PROD_ENV: ${{ secrets.PROD_ENV }}
+        run: |
+          printf '%s\n' "$PROD_ENV" > ./backend.env
+
       - name: Configure SSH
         env:
           DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_SSH_KEY }}
@@ -58,6 +64,8 @@ jobs:
             "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-backend-${{ github.sha }}.tar.gz"
           scp -i ~/.ssh/deploy_key Caddyfile \
             "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-Caddyfile-${{ github.sha }}"
+          scp -i ~/.ssh/deploy_key backend.env \
+            "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-backend-env-${{ github.sha }}"
 
       - name: Activate release
         env:
@@ -67,6 +75,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
             "RELEASE_SHA=${{ github.sha }} bash -s" <<'REMOTE'
           set -euo pipefail
+          sudo install -o root -g root -m 0600 "/tmp/attendance-backend-env-${RELEASE_SHA}" /etc/college-attendance/backend.env
           sudo install -d -m 0755 /opt/college-attendance/backend
           sudo install -d -m 0755 /var/www/college-attendance
           sudo tar -xzf "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" -C /var/www/college-attendance
@@ -89,5 +98,5 @@ jobs:
             sleep 1
           done
           test "$healthy" = 1
-          rm -f "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-backend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-Caddyfile-${RELEASE_SHA}"
+          rm -f "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-backend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-Caddyfile-${RELEASE_SHA}" "/tmp/attendance-backend-env-${RELEASE_SHA}"
           REMOTE
