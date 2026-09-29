@@ -15,6 +15,14 @@ const envSchema = z.object({
   COLLEGE_LOGIN_REFERER: z.string().optional(),
   COLLEGE_ORIGIN: z.string().optional(),
   COLLEGE_REFERER: z.string().optional(),
+  RESEND_API_KEY: z.string().optional().or(z.literal("")),
+  RESEND_FROM: z.string().default("Attendance Monitor <noreply@himon.xyz>"),
+  DISCORD_WEBHOOK_URL: z.string().optional().or(z.literal("")),
+  FIREBASE_SERVICE_ACCOUNT: z.string().optional().or(z.literal("")),
+  FIREBASE_SERVER_KEY: z.string().optional().or(z.literal("")),
+  FIREBASE_VAPID_KEY: z.string().default("BH2Mc0SDTxo1LZnxF2FQL-p2TlBRX1nfG0HNOSG3H0Yx8qBb8ZwD40suAFcBCg_8ZO4dMzQjUcOmTft_oCXg3wA"),
+  FIREBASE_PROJECT_ID: z.string().optional().or(z.literal("")),
+  APP_URL: z.string().url().optional().or(z.literal("")),
 });
 
 export const env = envSchema.parse(process.env);

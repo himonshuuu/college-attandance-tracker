@@ -20,6 +20,7 @@ app.disable("x-powered-by");
 app.use(helmet());
 app.use(cors({ origin: env.FRONTEND_ORIGIN, credentials: true }));
 app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
 app.use((request, _response, next) => {
   request.requestId = request.header("x-request-id") ?? randomUUID();

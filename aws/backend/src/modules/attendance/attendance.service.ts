@@ -80,7 +80,7 @@ function normalizePayload(payload: unknown): AttendanceRecord[] | null {
   return null;
 }
 
-async function storeAttendance(enrollmentId: string, year: number, month: string, records: AttendanceRecord[]): Promise<void> {
+export async function storeAttendance(enrollmentId: string, year: number, month: string, records: AttendanceRecord[]): Promise<void> {
   try {
     await pool.query(
       `INSERT INTO attendance_cache (enrollment_id, year, month, payload, fetched_at)

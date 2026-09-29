@@ -2,12 +2,12 @@ import { Router, type Response } from "express";
 import { z } from "zod";
 import { env } from "../../config/env";
 import { pool, withTransaction } from "../../db/pool";
-import { createUser, findUserByEmail, findUserById } from "../users/users.repository";
+import { log } from "../../observability/logger";
+import { sendPasswordResetEmail, sendWelcomeEmail } from "../notifications/notification.service";
+import { CollegePortalError, fetchStudentProfile } from "../college/college.service";
+import { createUser, findUserByEmail, findUserByEnrollment, findUserById } from "../users/users.repository";
 import { generateToken, hashPassword, sha256Hex, verifyPassword } from "./crypto";
 import { createSession, destroySession, requestToken, requireAuth } from "./session";
-import { CollegePortalError, fetchStudentProfile } from "../college/college.service";
-import { findUserByEnrollment } from "../users/users.repository";
-import { log } from "../../observability/logger";
 
 export const authRouter = Router();
 const resetTtlMs = 60 * 60 * 1000;
@@ -60,6 +60,9 @@ authRouter.post("/register", async (request, response) => {
     });
     const token = await createSession(user.id, user.email, user.enrollment_id);
     setAuthCookie(response, token);
+    void sendWelcomeEmail(user.email, user.enrollment_id).catch((error) => {
+      log("warn", "welcome-email-failed", { requestId: request.requestId, error: error instanceof Error ? error.message : String(error) });
+    });
     return response.status(201).json({ success: true, token, message: "Account created!" });
   } catch (error: unknown) {
     if ((error as { code?: string }).code === "23505") return response.status(409).json({ success: false, error: "Enrollment ID is already linked to an account." });
@@ -112,7 +115,10 @@ authRouter.post("/forgot-password", async (request, response) => {
      VALUES ($1, $2, $3, $4)`,
     [user.id, user.email, sha256Hex(token), new Date(Date.now() + resetTtlMs)],
   );
-  if (env.NODE_ENV !== "production") console.info(JSON.stringify({ event: "password-reset-development-link", token }));
+  const origin = env.APP_URL || `${request.protocol}://${request.get("host")}`;
+  void sendPasswordResetEmail(user.email, `${origin}/reset-password?token=${encodeURIComponent(token)}`).catch((error) => {
+    log("warn", "password-reset-email-failed", { requestId: request.requestId, error: error instanceof Error ? error.message : String(error) });
+  });
   return response.json(generic);
 });
 

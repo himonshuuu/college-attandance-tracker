@@ -3,6 +3,7 @@ import { env } from "./config/env";
 import { pool, withTransaction } from "./db/pool";
 import { runMigrations } from "./db/migrations";
 import { log } from "./observability/logger";
+import { startNotificationScheduler } from "./modules/notifications/notification.scheduler";
 
 let server: ReturnType<typeof app.listen>;
 
@@ -10,6 +11,7 @@ async function main(): Promise<void> {
   await withTransaction(async (client) => runMigrations(client));
   server = app.listen(env.PORT, () => {
     log("info", "api-started", { port: env.PORT, environment: env.NODE_ENV });
+    startNotificationScheduler();
   });
 }
 
