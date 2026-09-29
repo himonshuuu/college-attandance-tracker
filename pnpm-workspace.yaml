@@ -3,7 +3,7 @@ packages:
   - frontend
 
 allowBuilds:
-  esbuild: set this to true or false
+  esbuild: true
 
 onlyBuiltDependencies:
   - esbuild

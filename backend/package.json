@@ -8,6 +8,7 @@
     "start": "node dist/server.js",
     "db:migrate": "tsx src/db/migrate.ts",
     "migrate:d1": "tsx src/scripts/migrate-d1.ts",
+    "announce:back-online": "tsx src/scripts/announce-back-online.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
