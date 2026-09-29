@@ -106,4 +106,9 @@ Use `LOG_LEVEL=debug` temporarily for detailed portal/cache diagnostics;
 `info` is the recommended steady-state level. Every API response includes its
 `X-Request-Id`, which can be matched directly in the systemd journal.
 
+Notification email uses AWS SES SMTP as the primary provider. If SES rejects
+or cannot deliver a message, the API automatically retries that message
+through Resend. SMTP credentials belong only in the server environment and
+must never be committed.
+
 Never commit `.env`, database dumps, migration reports, or credentials.
