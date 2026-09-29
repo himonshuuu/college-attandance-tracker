@@ -149,8 +149,8 @@ export const App: React.FC = () => {
       case "login":
         return (
           <LoginView
-            onLoginSuccess={() => {
-              checkAuth();
+            onLoginSuccess={async () => {
+              await checkAuth();
               navigate(PATHS.profile);
             }}
             onSwitchToRegister={() => navigate(PATHS.register)}
@@ -160,13 +160,13 @@ export const App: React.FC = () => {
       case "register":
         return (
           <RegisterView
-            onRegisterSuccess={() => {
+            onRegisterSuccess={async () => {
               try {
                 window.sessionStorage.setItem("welcome", "1");
               } catch {
                 // Ignore
               }
-              checkAuth();
+              await checkAuth();
               navigate(PATHS.profile);
             }}
             onSwitchToLogin={() => navigate(PATHS.login)}

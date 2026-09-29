@@ -1,0 +1,22 @@
+# The server currently exposes the app over HTTP by IP. Replace this address with the
+# real DNS name once it points at this instance; Caddy will then provision TLS.
+http://13.233.147.195 {
+  encode gzip
+
+  log {
+    output file /var/log/caddy/college-attendance-access.log
+    format json
+  }
+
+  route {
+    handle /api/* {
+      reverse_proxy 127.0.0.1:4000
+    }
+
+    handle {
+      root * /var/www/college-attendance
+      try_files {path} /index.html
+      file_server
+    }
+  }
+}

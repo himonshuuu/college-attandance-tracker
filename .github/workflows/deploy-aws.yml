@@ -1,0 +1,81 @@
+name: Deploy attendance tracker to AWS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: attendance-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.5.2
+
+      - name: Build existing React frontend
+        run: pnpm install --frozen-lockfile --ignore-workspace && pnpm --dir aws/frontend install --frozen-lockfile --ignore-workspace && pnpm --dir aws/frontend build
+
+      - name: Build Express backend
+        run: pnpm --dir aws/backend install --frozen-lockfile --ignore-workspace && pnpm --dir aws/backend build
+
+      - name: Package release
+        run: |
+          tar -czf frontend.tar.gz -C aws/frontend/dist .
+          tar -czf backend.tar.gz -C aws/backend dist migrations package.json pnpm-lock.yaml
+
+      - name: Configure SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.AWS_DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.AWS_DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          scp -i ~/.ssh/deploy_key frontend.tar.gz \
+            "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-frontend-${{ github.sha }}.tar.gz"
+          scp -i ~/.ssh/deploy_key backend.tar.gz \
+            "${{ secrets.AWS_DEPLOY_USER }}@${{ secrets.AWS_DEPLOY_HOST }}:/tmp/attendance-backend-${{ github.sha }}.tar.gz"
+
+      - name: Activate release
+        env:
+          DEPLOY_HOST: ${{ secrets.AWS_DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.AWS_DEPLOY_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" \
+            "RELEASE_SHA=${{ github.sha }} bash -s" <<'REMOTE'
+          set -euo pipefail
+          sudo install -d -m 0755 /opt/college-attendance/backend
+          sudo install -d -m 0755 /var/www/college-attendance
+          sudo tar -xzf "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" -C /var/www/college-attendance
+          sudo tar -xzf "/tmp/attendance-backend-${RELEASE_SHA}.tar.gz" -C /opt/college-attendance/backend
+          cd /opt/college-attendance/backend
+          corepack enable
+          pnpm install --prod --frozen-lockfile --ignore-scripts
+          sudo systemctl daemon-reload
+          sudo systemctl enable college-attendance-api
+          sudo systemctl restart college-attendance-api
+          sudo caddy validate --config /etc/caddy/Caddyfile
+          sudo systemctl reload caddy
+          curl --fail --silent http://127.0.0.1:4000/api/health
+          rm -f "/tmp/attendance-frontend-${RELEASE_SHA}.tar.gz" "/tmp/attendance-backend-${RELEASE_SHA}.tar.gz"
+          REMOTE

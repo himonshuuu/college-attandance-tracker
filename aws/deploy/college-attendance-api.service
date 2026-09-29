@@ -1,0 +1,22 @@
+[Unit]
+Description=College Attendance Express API
+After=network-online.target postgresql.service
+Wants=network-online.target
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/college-attendance/backend
+EnvironmentFile=/etc/college-attendance/database.env
+EnvironmentFile=/etc/college-attendance/backend.env
+ExecStart=/usr/bin/node /opt/college-attendance/backend/dist/server.js
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

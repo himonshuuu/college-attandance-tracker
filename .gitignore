@@ -7,3 +7,5 @@ dist/
 !.env.example
 worker-configuration.d.ts
 .DS_Store
+d1-export*.sql
+migration-report*.json
