@@ -6,7 +6,7 @@
     "strict": true,
     "noEmit": true,
     "lib": ["ES2022", "DOM", "WebWorker"],
-    "types": ["@cloudflare/workers-types"],
+    "types": ["vite/client"],
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "allowJs": false,
@@ -15,4 +15,3 @@
   },
   "include": ["src/**/*.ts", "src/**/*.tsx"]
 }
-

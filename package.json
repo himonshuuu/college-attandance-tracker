@@ -1,29 +1,13 @@
 {
-  "name": "college-attendance-monitor",
-  "version": "2.0.0",
+  "name": "college-attendance-platform",
+  "version": "3.0.0",
   "private": true,
-  "description": "Cloudflare Worker that monitors college attendance and sends alerts via email, Discord, or browser push.",
+  "description": "AWS Express/PostgreSQL attendance monitor with the existing React frontend.",
   "packageManager": "pnpm@11.5.2",
   "scripts": {
-    "build": "vite build",
-    "dev": "wrangler dev --remote",
-    "dev:local": "wrangler dev",
-    "deploy": "vite build && wrangler deploy",
-    "typecheck": "tsc --noEmit",
-    "cf-typegen": "wrangler types"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^5.20260815.1",
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.1",
-    "typescript": "^5.7.2",
-    "vite": "^8.2.2",
-    "wrangler": "^4.124.0"
-  },
-  "dependencies": {
-    "hono": "^4.13.7",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "build": "pnpm --dir frontend build && pnpm --dir backend build",
+    "dev:frontend": "pnpm --dir frontend dev",
+    "dev:backend": "pnpm --dir backend dev",
+    "typecheck": "pnpm --dir backend typecheck && pnpm --dir frontend exec tsc --noEmit"
   }
 }

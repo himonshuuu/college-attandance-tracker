@@ -30,16 +30,16 @@ jobs:
           version: 11.5.2
 
       - name: Build existing React frontend
-        run: pnpm install --frozen-lockfile --ignore-workspace && pnpm --dir aws/frontend install --frozen-lockfile --ignore-workspace && pnpm --dir aws/frontend build
+        run: pnpm install --frozen-lockfile && pnpm --dir frontend build
 
       - name: Build Express backend
-        run: pnpm --dir aws/backend install --frozen-lockfile --ignore-workspace && pnpm --dir aws/backend build
+        run: pnpm --dir backend build
 
       - name: Package release
         run: |
-          tar -czf frontend.tar.gz -C aws/frontend/dist .
-          tar -czf backend.tar.gz -C aws/backend dist migrations package.json pnpm-lock.yaml
-          cp aws/deploy/Caddyfile Caddyfile
+          tar -czf frontend.tar.gz -C frontend/dist .
+          tar -czf backend.tar.gz -C backend dist migrations package.json pnpm-lock.yaml
+          cp deploy/Caddyfile Caddyfile
 
       - name: Configure SSH
         env:

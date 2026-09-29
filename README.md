@@ -1,104 +1,102 @@
-# College Attendance Monitor
+# College Attendance Platform
 
-Cloudflare Worker that wraps a college's PHP portal to fetch attendance and student profiles, with a web frontend and Discord notifications.
+The production application is organized at the repository root:
 
-## Project structure
-
-```
-src/
-  index.ts              Worker entry — API router + cron handler
-  types.ts              TypeScript interfaces
-  time.ts               IST timezone utilities
-  parser.ts             Attendance HTML table parser
-  monitor.ts            Cron-driven attendance monitoring loop
-  students.ts           D1 student registration & queries
-  discord.ts            Discord webhook embeds
-  college/
-    auth.ts             PHP portal login + KV session cache
-    api.ts              Profile & attendance fetchers
-  api/
-    router.ts           URL pattern matching & dispatch
-    middleware.ts        JSON responses, CORS, error handling
-    attendance.ts       GET /api/attendance/:id, /summary
-    students.ts         GET /api/students/:id, POST /api/students
-    health.ts           GET /api/health
-
-public/
-  index.html            Frontend — student lookup, profile, attendance
-  css/style.css         Styles
-  js/app.js             API calls & DOM rendering
-
-migrations/             D1 schema migrations
-wrangler.toml           Worker, KV, D1, assets, cron config
+```text
+backend/       Express + TypeScript API and PostgreSQL access
+frontend/      Existing React + Vite client
+deploy/        Caddy and systemd configuration
+docker-compose.yml
 ```
 
-## Setup
+
+## Quick start
+
+Requirements: Node 20+, pnpm 9+, and Docker (for local PostgreSQL).
 
 ```sh
+cp .env.example backend/.env
+docker compose up -d postgres
 pnpm install
-pnpm run typecheck
+pnpm --dir backend db:migrate
+pnpm --dir backend dev
+pnpm --dir frontend dev
 ```
 
-### D1 database
+The frontend runs on `http://localhost:5173`; the API runs on
+`http://localhost:4000`.
+
+## D1 to PostgreSQL migration
+
+The importer is read-only against the SQLite source and writes to PostgreSQL
+inside one transaction. It is safe to re-run: existing identical rows are
+skipped, while conflicting rows fail the transaction instead of being
+silently overwritten.
+
+After midnight, export the remote Cloudflare D1 database using the account's
+configured D1 export process. The importer accepts either the resulting SQL
+export or a SQLite database file:
+
+Create a fresh PostgreSQL database and run a dry run:
 
 ```sh
-pnpm exec wrangler d1 create college-attendance-students
+pnpm --dir backend migrate:d1 -- \
+  --source /path/to/d1-export.sql \
+  --target "$DATABASE_URL" \
+  --dry-run
 ```
 
-Copy the `database_id` into `wrangler.toml`, then apply migrations:
+Then import and verify:
 
 ```sh
-pnpm exec wrangler d1 migrations apply college-attendance-students --local
-pnpm exec wrangler d1 migrations apply college-attendance-students --remote
+pnpm --dir backend migrate:d1 -- \
+  --source /path/to/exported-d1.sqlite \
+  --target "$DATABASE_URL" \
+  --report ./migration-report.json
 ```
 
-### Secrets
+The importer contains the D1-to-PostgreSQL table mapping and preserves every
+current D1 business table, including cached attendance and engagement data.
+
+## GitHub Actions deployment
+
+The workflow at `.github/workflows/deploy-aws.yml` builds the existing React
+frontend, builds the Express backend, uploads both artifacts over SSH, restarts
+the systemd service, and reloads Caddy.
+
+After refreshing GitHub CLI authentication, configure the repository secrets:
 
 ```sh
-pnpm exec wrangler secret put COLLEGE_LOGIN_URL
-pnpm exec wrangler secret put COLLEGE_LOGIN_REFERER
-pnpm exec wrangler secret put COLLEGE_PROFILE_URL
-pnpm exec wrangler secret put COLLEGE_ATTENDANCE_URL
-pnpm exec wrangler secret put COLLEGE_ORIGIN
-pnpm exec wrangler secret put COLLEGE_REFERER
-pnpm exec wrangler secret put DISCORD_WEBHOOK_URL
+gh auth login -h github.com
+gh secret set AWS_DEPLOY_HOST --body 13.233.147.195
+gh secret set AWS_DEPLOY_USER --body ubuntu
+gh secret set AWS_DEPLOY_SSH_KEY < ~/ssh-keys/fokat-ka-maal.pem
 ```
 
-For local dev, create `.dev.vars` from `.env.example`.
+The production domain is configured in `deploy/Caddyfile` as
+`attendance.himon.in`; Caddy provisions and renews HTTPS automatically.
 
-### Run
+## Debugging and request logs
+
+The API emits one JSON log event for every response. It includes the request
+ID, method, path, status, duration, and authentication state, but never logs
+request bodies, cookies, tokens, or enrollment IDs. College portal and
+attendance-cache events are also emitted at `debug` level.
+
+On the server:
 
 ```sh
-pnpm dev
+sudo journalctl -u college-attendance-api -f -o cat
+sudo tail -f /var/log/caddy/college-attendance-access.log
 ```
 
-## REST API
+Use `LOG_LEVEL=debug` temporarily for detailed portal/cache diagnostics;
+`info` is the recommended steady-state level. Every API response includes its
+`X-Request-Id`, which can be matched directly in the systemd journal.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/health` | Health check |
-| `GET` | `/api/students/:enrollmentId` | Fetch student profile from college portal |
-| `POST` | `/api/students` | Register student (`{ "enrollmentId": "..." }`) |
-| `GET` | `/api/attendance/:enrollmentId?month=September&year=2026` | Attendance records |
-| `GET` | `/api/attendance/:enrollmentId/summary` | Attendance summary with percentage |
+Notification email uses AWS SES SMTP as the primary provider. If SES rejects
+or cannot deliver a message, the API automatically retries that message
+through Resend. SMTP credentials belong only in the server environment and
+must never be committed.
 
-All responses follow `{ success: boolean, data?: T, error?: string }`.
-
-## Auth flow
-
-`college/auth.ts` handles PHP session management:
-
-1. `getSession(env, enrollmentId)` — checks KV cache (30 min TTL)
-2. On cache miss, POSTs to `student_login.php` with `phno=enrollmentId&pass=enrollmentId`
-3. Extracts `PHPSESSID` from `Set-Cookie`, caches in KV
-4. On 401/403, caller invalidates via `invalidateSession(env, enrollmentId)`
-
-## Monitoring
-
-Cron triggers run every 15 min during IST work hours (Mon-Sat). The worker fetches the current month's attendance, learns the timetable, and checks each class at end time + 15 min + 30 min retries. Notifications go to Discord.
-
-## Deploy
-
-```sh
-pnpm run deploy
-```
+Never commit `.env`, database dumps, migration reports, or credentials.
