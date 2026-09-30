@@ -273,9 +273,9 @@ export const App: React.FC = () => {
 
 	return (
 		<div className="bg-slate-50 text-slate-900 min-h-screen">
-			<div className="app-shell px-2 pt-4">
+			<div className="w-full max-w-[430px] mx-auto min-h-screen flex flex-col px-2 pt-4">
 				{/* Header */}
-				<header className="app-header flex items-center gap-3 pb-3 mb-3 -mx-3 px-3">
+				<header className="sticky top-0 z-40 flex items-center gap-3 pb-3 mb-3 -mx-2 px-2 pt-[env(safe-area-inset-top)] bg-slate-50/88 backdrop-blur-md">
 					<div className="w-9 h-9 bg-blue-600 text-white rounded-[10px] flex items-center justify-center font-bold text-sm shrink-0 shadow-sm">
 						A
 					</div>
@@ -297,12 +297,14 @@ export const App: React.FC = () => {
 				</header>
 
 				{/* Main Content Area */}
-				<main className="app-main">{renderMain()}</main>
+				<main className="flex-1 pb-[calc(96px+env(safe-area-inset-bottom))]">
+					{renderMain()}
+				</main>
 
 				{/* Fixed Bottom Navbar */}
 				{showChrome && (
 					<div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-50/90 backdrop-blur-md">
-						<div className="px-3 pt-2 app-tabbar" style={{ maxWidth: 430, margin: "0 auto" }}>
+						<div className="w-full max-w-[430px] mx-auto px-3 pt-2 pb-[env(safe-area-inset-bottom)]">
 							<Navbar activeTab={effectiveRoute} />
 						</div>
 					</div>

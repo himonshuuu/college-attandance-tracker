@@ -185,38 +185,6 @@ a,
 .method-card {
 	transition: transform 0.1s ease;
 }
-/* Phone column: full-bleed on phones, centered 430px app column on larger screens */
-.app-shell {
-	width: 100%;
-	max-width: 430px;
-	margin-left: auto;
-	margin-right: auto;
-	min-height: 100dvh;
-	display: flex;
-	flex-direction: column;
-	position: relative;
-}
-/* Sticky blurred app bar under the notch */
-.app-header {
-	position: sticky;
-	top: 0;
-	z-index: 40;
-	padding-top: env(safe-area-inset-top);
-	background: rgba(248, 250, 252, 0.88);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
-}
-/* Bottom tab bar clears the home indicator */
-.app-tabbar {
-	padding-bottom: env(safe-area-inset-bottom);
-	position: relative;
-	z-index: 50;
-}
-/* Content never hides under the tab bar */
-.app-main {
-	padding-bottom: calc(96px + env(safe-area-inset-bottom));
-	flex: 1;
-}
 /* Native-feel scrolling for horizontal carousels/lists */
 .scroll-x {
 	overflow-x: auto;
