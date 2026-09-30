@@ -158,32 +158,6 @@ export const LeaderboardView: React.FC = () => {
 
 	return (
 		<div>
-			{/* Class filter */}
-			{classes.length > 0 && (
-				<div className="bg-white rounded-2xl px-4 py-3 mb-4 flex items-center gap-2">
-					<select
-						value={selectedClass}
-						onChange={(e) => setSelectedClass(e.target.value)}
-						className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 outline-none min-h-[44px]"
-					>
-						<option value="">All Classes</option>
-						{classes.map((c) => (
-							<option key={c} value={c}>
-								{c}
-							</option>
-						))}
-					</select>
-					{selectedClass && (
-						<button
-							onClick={() => setSelectedClass("")}
-							className="px-3 py-2.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold min-h-[44px]"
-						>
-							Clear
-						</button>
-					)}
-				</div>
-			)}
-
 			{/* Freshness note — data is served from fast snapshots, refreshed hourly */}
 			<div className="bg-white rounded-2xl px-4 py-3 mb-4 flex items-center gap-2">
 				<span
@@ -289,6 +263,32 @@ export const LeaderboardView: React.FC = () => {
 						</div>
 					) : (
 						<div className="flex-1 max-w-[110px] sm:max-w-[140px]"></div>
+					)}
+				</div>
+			)}
+
+			{/* Class filter — compact, below podium */}
+			{classes.length > 0 && (
+				<div className="flex items-center gap-2 mb-4">
+					<select
+						value={selectedClass}
+						onChange={(e) => setSelectedClass(e.target.value)}
+						className="flex-1 px-3 py-2 rounded-lg border border-slate-200 bg-white text-xs font-medium text-slate-700 outline-none min-h-[36px]"
+					>
+						<option value="">All Classes</option>
+						{classes.map((c) => (
+							<option key={c} value={c}>
+								{c}
+							</option>
+						))}
+					</select>
+					{selectedClass && (
+						<button
+							onClick={() => setSelectedClass("")}
+							className="px-2.5 py-2 rounded-lg bg-slate-100 text-slate-500 text-[10px] font-semibold min-h-[36px]"
+						>
+							Clear
+						</button>
 					)}
 				</div>
 			)}
