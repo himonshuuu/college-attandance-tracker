@@ -302,7 +302,7 @@ export const App: React.FC = () => {
 				{/* Fixed Bottom Navbar */}
 				{showChrome && (
 					<div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-50/90 backdrop-blur-md">
-						<div className="app-shell px-3 pt-2 app-tabbar">
+						<div className="px-3 pt-2 app-tabbar" style={{ maxWidth: 430, margin: "0 auto" }}>
 							<Navbar activeTab={effectiveRoute} />
 						</div>
 					</div>
