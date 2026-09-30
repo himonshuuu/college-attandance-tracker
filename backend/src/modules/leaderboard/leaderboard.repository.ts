@@ -33,13 +33,13 @@ export async function getClassRank(
 ): Promise<number | null> {
 	const result = await pool.query<{ class_rank: number }>(
 		`SELECT class_rank FROM (
-			SELECT enrollment_id, row_number() OVER (ORDER BY pct DESC, enrollment_id ASC) AS class_rank
+			SELECT s.enrollment_id, row_number() OVER (ORDER BY s.pct DESC, s.enrollment_id ASC) AS class_rank
 			FROM rank_snapshots s
 			JOIN users u ON u.enrollment_id = s.enrollment_id
 			WHERE s.month = $1 AND u.active = TRUE AND u.class_name = (
 				SELECT class_name FROM users WHERE enrollment_id = $2
 			)
-		) ranked WHERE enrollment_id = $2`,
+		) ranked WHERE ranked.enrollment_id = $2`,
 		[monthKey, enrollmentId],
 	);
 	return result.rows[0]?.class_rank ?? null;
