@@ -11,16 +11,25 @@ export interface SnapshotRow {
 
 export async function getMonthSnapshots(
 	monthKey: string,
+	classFilter?: string,
 ): Promise<SnapshotRow[]> {
 	const result = await pool.query<SnapshotRow>(
 		`SELECT u.name, s.total, s.present, s.absent, s.pct, s.updated_at
        FROM rank_snapshots s
        JOIN users u ON u.enrollment_id = s.enrollment_id
       WHERE s.month = $1 AND u.active = TRUE
+        ${classFilter ? "AND u.class_name = $2" : ""}
       ORDER BY s.rank ASC`,
-		[monthKey],
+		classFilter ? [monthKey, classFilter] : [monthKey],
 	);
 	return result.rows;
+}
+
+export async function getDistinctClasses(): Promise<string[]> {
+	const result = await pool.query<{ class_name: string }>(
+		`SELECT DISTINCT class_name FROM users WHERE active = TRUE AND class_name <> '' ORDER BY class_name`,
+	);
+	return result.rows.map((r) => r.class_name);
 }
 
 export async function countActiveUsers(): Promise<number> {

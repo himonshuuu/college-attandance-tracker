@@ -19,8 +19,8 @@ const envSchema = z.object({
 		.default("false")
 		.transform((v) => v === "true"),
 	SESSION_TTL_DAYS: z.coerce.number().int().positive().default(15),
-  COLLEGE_PROFILE_URL: z.string().url().optional().or(z.literal("")),
-  COLLEGE_SUBJECTS_URL: z.string().url().optional().or(z.literal("")),
+	COLLEGE_PROFILE_URL: z.string().url().optional().or(z.literal("")),
+	COLLEGE_SUBJECTS_URL: z.string().url().optional().or(z.literal("")),
 	COLLEGE_ATTENDANCE_URL: z.string().url().optional().or(z.literal("")),
 	COLLEGE_LOGIN_URL: z.string().url().optional().or(z.literal("")),
 	COLLEGE_LOGIN_REFERER: z.string().optional(),

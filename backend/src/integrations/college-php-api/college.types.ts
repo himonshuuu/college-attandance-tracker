@@ -10,8 +10,8 @@ export interface StudentProfile {
 
 export interface SubjectDetail {
 	label: string;
+	/** Raw portal text — empty for user-added subjects. */
 	value: string;
-	/** Comma-split course entries, e.g. ["COMPUTER SCIENCE", "STATISTICS", ...]. */
 	courses: string[];
 }
 

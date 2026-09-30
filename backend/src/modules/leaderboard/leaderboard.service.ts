@@ -5,6 +5,7 @@ import {
 import { mapWithConcurrency } from "../../utils/async";
 import {
 	countActiveUsers,
+	getDistinctClasses,
 	getExistingSnapshots,
 	getMonthSnapshots,
 	getRefreshLease,
@@ -20,10 +21,10 @@ const REFRESH_CONCURRENCY = 4;
 
 let refreshInProgress: Promise<void> | null = null;
 
-export async function getLeaderboard() {
+export async function getLeaderboard(classFilter?: string) {
 	const period = currentPeriod();
 	const monthKey = `${period.year}-${period.month}`;
-	const rows = await getMonthSnapshots(monthKey);
+	const rows = await getMonthSnapshots(monthKey, classFilter);
 	const newest = rows.reduce<Date | null>(
 		(value, row) => (!value || row.updated_at > value ? row.updated_at : value),
 		null,
@@ -60,6 +61,10 @@ export async function getLeaderboard() {
 		refreshing: pending > 0,
 		building: snapshotCount === 0 && totalStudents > 0,
 	};
+}
+
+export async function getLeaderboardClasses(): Promise<string[]> {
+	return getDistinctClasses();
 }
 
 export async function refreshSnapshots(): Promise<void> {
