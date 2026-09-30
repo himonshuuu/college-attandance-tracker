@@ -55,6 +55,7 @@ export const LeaderboardView: React.FC = () => {
 	const [selectedClass, setSelectedClass] = useState<string>("");
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
+	const [hasSelected, setHasSelected] = useState(false);
 
 	useEffect(() => {
 		fetch("/api/leaderboard/classes")
@@ -76,10 +77,15 @@ export const LeaderboardView: React.FC = () => {
 				const parsed = d as LeaderboardData;
 				if ((parsed as any).error) throw new Error((parsed as any).error);
 				setData(parsed);
+				// Default to the user's own class on first load only
+				if (!hasSelected && parsed.userClass) {
+					setSelectedClass(parsed.userClass);
+					setHasSelected(true);
+				}
 			})
 			.catch((err: Error) => setError(err.message))
 			.finally(() => setLoading(false));
-	}, [selectedClass]);
+	}, [selectedClass, hasSelected]);
 
 	if (loading) {
 		return (
@@ -106,9 +112,16 @@ export const LeaderboardView: React.FC = () => {
 				{/* Class filter — always visible when classes exist */}
 				{classes.length > 0 && (
 					<div className="bg-white rounded-2xl px-4 py-3 mb-4 flex items-center gap-2">
+						<label className="text-xs font-semibold text-slate-500 shrink-0">
+							Filter
+						</label>
 						<select
 							value={selectedClass}
-							onChange={(e) => setSelectedClass(e.target.value)}
+							onChange={(e) => {
+								setSelectedClass(e.target.value);
+								setHasSelected(true);
+								setLoading(true);
+							}}
 							className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 outline-none min-h-[44px]"
 						>
 							<option value="">All Classes</option>
@@ -120,7 +133,11 @@ export const LeaderboardView: React.FC = () => {
 						</select>
 						{selectedClass && (
 							<button
-								onClick={() => setSelectedClass("")}
+								onClick={() => {
+									setSelectedClass("");
+									setHasSelected(false);
+									setLoading(true);
+								}}
 								className="px-3 py-2.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold min-h-[44px]"
 							>
 								Clear
