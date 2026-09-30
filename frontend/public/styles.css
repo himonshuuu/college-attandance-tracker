@@ -192,6 +192,8 @@ a,
 	margin-left: auto;
 	margin-right: auto;
 	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
 }
 /* Sticky blurred app bar under the notch */
 .app-header {
@@ -210,6 +212,7 @@ a,
 /* Content never hides under the tab bar */
 .app-main {
 	padding-bottom: calc(96px + env(safe-area-inset-bottom));
+	flex: 1;
 }
 /* Native-feel scrolling for horizontal carousels/lists */
 .scroll-x {
