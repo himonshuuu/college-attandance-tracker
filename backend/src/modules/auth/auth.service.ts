@@ -60,6 +60,7 @@ export async function registerUserWithProfile(input: RegisterInput) {
 			stream: profile.stream,
 			rollNumber: profile.rollNumber,
 			profilePhotoUrl: profile.profilePhotoUrl,
+			subjects: profile.subjects,
 		});
 		const token = await createSession(user.id, user.email, user.enrollment_id);
 		return { user, token };
