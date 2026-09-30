@@ -194,6 +194,7 @@ a,
 	min-height: 100dvh;
 	display: flex;
 	flex-direction: column;
+	position: relative;
 }
 /* Sticky blurred app bar under the notch */
 .app-header {
@@ -208,6 +209,8 @@ a,
 /* Bottom tab bar clears the home indicator */
 .app-tabbar {
 	padding-bottom: env(safe-area-inset-bottom);
+	position: relative;
+	z-index: 50;
 }
 /* Content never hides under the tab bar */
 .app-main {
