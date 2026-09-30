@@ -302,11 +302,13 @@ export const App: React.FC = () => {
 				</main>
 			</div>
 
-			{/* Fixed Bottom Navbar — mobile island style */}
+			{/* Fixed Bottom Navbar — mobile island style, no backdrop-filter */}
 			{showChrome && (
 				<div className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
 					<div className="w-full max-w-[430px] mx-auto px-4 pb-3">
-						<Navbar activeTab={effectiveRoute} />
+						<div className="bg-white rounded-2xl shadow-lg shadow-slate-900/8 border border-slate-200/60">
+							<Navbar activeTab={effectiveRoute} />
+						</div>
 					</div>
 				</div>
 			)}
