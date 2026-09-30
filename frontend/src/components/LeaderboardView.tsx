@@ -105,21 +105,48 @@ export const LeaderboardView: React.FC = () => {
 
 	if (!data || !data.students || data.students.length === 0) {
 		return (
-			<div className="text-center py-12 px-6">
-				<p className="text-slate-500 text-sm font-medium">
-					{data?.building
-						? "Building the leaderboard..."
-						: "The leaderboard is empty."}
-				</p>
-				<p className="text-slate-400 text-xs mt-1 leading-relaxed">
-					{data?.building
-						? "Fetching everyone's latest attendance — check back in a few minutes."
-						: "Ranks appear once classmates join and classes are marked."}
-					<br />
-					{data?.checksText
-						? `Checks run ${data.checksText}.`
-						: "Checks run after every class."}
-				</p>
+			<div>
+				{/* Class filter — always visible when classes exist */}
+				{classes.length > 0 && (
+					<div className="bg-white rounded-2xl px-4 py-3 mb-4 flex items-center gap-2">
+						<select
+							value={selectedClass}
+							onChange={(e) => setSelectedClass(e.target.value)}
+							className="flex-1 px-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-medium text-slate-700 outline-none min-h-[44px]"
+						>
+							<option value="">All Classes</option>
+							{classes.map((c) => (
+								<option key={c} value={c}>
+									{c}
+								</option>
+							))}
+						</select>
+						{selectedClass && (
+							<button
+								onClick={() => setSelectedClass("")}
+								className="px-3 py-2.5 rounded-xl bg-slate-100 text-slate-500 text-xs font-semibold min-h-[44px]"
+							>
+								Clear
+							</button>
+						)}
+					</div>
+				)}
+				<div className="text-center py-12 px-6">
+					<p className="text-slate-500 text-sm font-medium">
+						{data?.building
+							? "Building the leaderboard..."
+							: "The leaderboard is empty."}
+					</p>
+					<p className="text-slate-400 text-xs mt-1 leading-relaxed">
+						{data?.building
+							? "Fetching everyone's latest attendance — check back in a few minutes."
+							: "Ranks appear once classmates join and classes are marked."}
+						<br />
+						{data?.checksText
+							? `Checks run ${data.checksText}.`
+							: "Checks run after every class."}
+					</p>
+				</div>
 			</div>
 		);
 	}
