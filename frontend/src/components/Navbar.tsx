@@ -77,7 +77,10 @@ const TABS: Array<{
 /** Mobile-first bottom nav: real links (shareable /paths), 44px touch targets. */
 export const Navbar: React.FC<NavbarProps> = ({ activeTab }) => {
 	return (
-		<nav className="nav-tabs" aria-label="Main navigation">
+		<nav
+			className="flex gap-1 p-1.5 bg-white rounded-2xl shadow-lg shadow-slate-900/8 border border-slate-200/60"
+			aria-label="Main navigation"
+		>
 			{TABS.map((tab) => (
 				<a
 					key={tab.key}
@@ -87,11 +90,15 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab }) => {
 						navigate(tab.path);
 					}}
 					aria-current={activeTab === tab.key ? "page" : undefined}
-					className={`nav-tab min-h-[44px] ${activeTab === tab.key ? "active" : ""}`}
+					className={`flex flex-col items-center justify-center gap-0.5 flex-1 py-2 rounded-xl text-[10px] font-semibold transition-colors min-h-[44px] ${
+						activeTab === tab.key
+							? "bg-blue-600 text-white shadow-sm"
+							: "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
+					}`}
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						className="nav-icon"
+						className="w-5 h-5 shrink-0"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -102,7 +109,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab }) => {
 					>
 						{tab.icon}
 					</svg>
-					<span>{tab.label}</span>
+					<span className="leading-none">{tab.label}</span>
 				</a>
 			))}
 		</nav>

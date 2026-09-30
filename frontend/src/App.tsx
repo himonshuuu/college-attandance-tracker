@@ -300,16 +300,16 @@ export const App: React.FC = () => {
 				<main className="flex-1 pb-[calc(96px+env(safe-area-inset-bottom))]">
 					{renderMain()}
 				</main>
-
-				{/* Fixed Bottom Navbar */}
-				{showChrome && (
-					<div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-50/90 backdrop-blur-md">
-						<div className="w-full max-w-[430px] mx-auto px-3 pt-2 pb-[env(safe-area-inset-bottom)]">
-							<Navbar activeTab={effectiveRoute} />
-						</div>
-					</div>
-				)}
 			</div>
+
+			{/* Fixed Bottom Navbar — mobile island style */}
+			{showChrome && (
+				<div className="fixed bottom-0 left-0 right-0 z-50 pb-[env(safe-area-inset-bottom)]">
+					<div className="w-full max-w-[430px] mx-auto px-4 pb-3">
+						<Navbar activeTab={effectiveRoute} />
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };
