@@ -21,7 +21,7 @@ const REFRESH_CONCURRENCY = 4;
 
 let refreshInProgress: Promise<void> | null = null;
 
-export async function getLeaderboard(classFilter?: string) {
+export async function getLeaderboard(classFilter?: string, userClass?: string) {
 	const period = currentPeriod();
 	const monthKey = `${period.year}-${period.month}`;
 	const rows = await getMonthSnapshots(monthKey, classFilter);
@@ -60,6 +60,7 @@ export async function getLeaderboard(classFilter?: string) {
 		staleCount: pending,
 		refreshing: pending > 0,
 		building: snapshotCount === 0 && totalStudents > 0,
+		userClass: userClass ?? null,
 	};
 }
 

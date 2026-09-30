@@ -18,6 +18,7 @@ interface LeaderboardData {
 	staleCount?: number;
 	refreshing?: boolean;
 	building?: boolean;
+	userClass?: string | null;
 }
 
 interface ClassesData {
@@ -74,6 +75,10 @@ export const LeaderboardView: React.FC = () => {
 				const parsed = d as LeaderboardData;
 				if ((parsed as any).error) throw new Error((parsed as any).error);
 				setData(parsed);
+				// Default to the user's own class on first load
+				if (!selectedClass && parsed.userClass) {
+					setSelectedClass(parsed.userClass);
+				}
 			})
 			.catch((err: Error) => setError(err.message))
 			.finally(() => setLoading(false));
