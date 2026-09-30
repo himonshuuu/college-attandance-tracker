@@ -5,6 +5,7 @@ import {
 import { mapWithConcurrency } from "../../utils/async";
 import {
 	countActiveUsers,
+	getClassRank,
 	getDistinctClasses,
 	getExistingSnapshots,
 	getMonthSnapshots,
@@ -46,12 +47,13 @@ export async function getLeaderboard(classFilter?: string, userClass?: string) {
 		),
 	);
 	return {
-		students: rows.map(({ name, total, present, absent, pct }) => ({
+		students: rows.map(({ name, total, present, absent, pct, rank }) => ({
 			name,
 			total,
 			present,
 			absent,
 			pct,
+			globalRank: rank,
 		})),
 		month: period.month,
 		year: period.year,

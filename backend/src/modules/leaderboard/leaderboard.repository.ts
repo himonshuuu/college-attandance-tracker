@@ -2,10 +2,12 @@ import { pool } from "../../db/pool";
 
 export interface SnapshotRow {
 	name: string;
+	enrollment_id: string;
 	total: number;
 	present: number;
 	absent: number;
 	pct: number;
+	rank: number;
 	updated_at: Date;
 }
 
@@ -14,7 +16,7 @@ export async function getMonthSnapshots(
 	classFilter?: string,
 ): Promise<SnapshotRow[]> {
 	const result = await pool.query<SnapshotRow>(
-		`SELECT u.name, s.total, s.present, s.absent, s.pct, s.updated_at
+		`SELECT u.name, u.enrollment_id, s.total, s.present, s.absent, s.pct, s.rank, s.updated_at
        FROM rank_snapshots s
        JOIN users u ON u.enrollment_id = s.enrollment_id
       WHERE s.month = $1 AND u.active = TRUE
@@ -23,6 +25,24 @@ export async function getMonthSnapshots(
 		classFilter ? [monthKey, classFilter] : [monthKey],
 	);
 	return result.rows;
+}
+
+export async function getClassRank(
+	enrollmentId: string,
+	monthKey: string,
+): Promise<number | null> {
+	const result = await pool.query<{ class_rank: number }>(
+		`SELECT class_rank FROM (
+			SELECT enrollment_id, row_number() OVER (ORDER BY pct DESC, enrollment_id ASC) AS class_rank
+			FROM rank_snapshots s
+			JOIN users u ON u.enrollment_id = s.enrollment_id
+			WHERE s.month = $1 AND u.active = TRUE AND u.class_name = (
+				SELECT class_name FROM users WHERE enrollment_id = $2
+			)
+		) ranked WHERE enrollment_id = $2`,
+		[monthKey, enrollmentId],
+	);
+	return result.rows[0]?.class_rank ?? null;
 }
 
 export async function getDistinctClasses(): Promise<string[]> {

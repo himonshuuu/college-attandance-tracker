@@ -8,6 +8,8 @@ interface ProfileData {
 		stream: string;
 		rollNumber: string;
 		profilePhotoUrl: string;
+		globalRank?: number | null;
+		classRank?: number | null;
 		subjects?: Array<{ label: string; value: string; courses: string[] }>;
 	};
 	subscriptions?: string[];
@@ -173,6 +175,22 @@ export const ProfileView: React.FC = () => {
 						</span>
 						<span className="text-sm font-medium text-slate-800">
 							{profile.className || "—"}
+						</span>
+					</div>
+					<div className="flex justify-between items-center py-2 border-b border-slate-100">
+						<span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+							Class Rank
+						</span>
+						<span className="text-sm font-medium text-slate-800">
+							{profile.classRank ? `#${profile.classRank}` : "—"}
+						</span>
+					</div>
+					<div className="flex justify-between items-center py-2 border-b border-slate-100">
+						<span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+							Global Rank
+						</span>
+						<span className="text-sm font-medium text-slate-800">
+							{profile.globalRank ? `#${profile.globalRank}` : "—"}
 						</span>
 					</div>
 					<div className="flex justify-between items-center py-2 border-b border-slate-100">

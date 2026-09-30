@@ -6,6 +6,7 @@ interface StudentLeaderboard {
 	present: number;
 	absent: number;
 	pct: number;
+	globalRank?: number;
 }
 
 interface LeaderboardData {
@@ -75,10 +76,6 @@ export const LeaderboardView: React.FC = () => {
 				const parsed = d as LeaderboardData;
 				if ((parsed as any).error) throw new Error((parsed as any).error);
 				setData(parsed);
-				// Default to the user's own class on first load
-				if (!selectedClass && parsed.userClass) {
-					setSelectedClass(parsed.userClass);
-				}
 			})
 			.catch((err: Error) => setError(err.message))
 			.finally(() => setLoading(false));
@@ -314,6 +311,11 @@ export const LeaderboardView: React.FC = () => {
 								<div className="text-sm font-semibold text-slate-900 truncate">
 									{st.name}
 								</div>
+								{st.globalRank != null && (
+									<div className="text-[10px] text-slate-400">
+										Global #{st.globalRank}
+									</div>
+								)}
 							</div>
 							<div className="w-12 sm:w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden shrink-0">
 								<div
