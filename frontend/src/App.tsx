@@ -10,6 +10,7 @@ import { AnalyticsView } from "./components/AnalyticsView";
 import { LeaderboardView } from "./components/LeaderboardView";
 import { SubscribeView } from "./components/SubscribeView";
 import { FriendsView } from "./components/FriendsView";
+import { FeedbackView } from "./components/FeedbackView";
 import {
 	PATHS,
 	navigate,
@@ -84,6 +85,11 @@ function titleFor(
 			return { title: "Attendance Alerts", subtitle: userEmail };
 		case "friends":
 			return { title: "Friends", subtitle: "Compare with classmates" };
+		case "feedback":
+			return {
+				title: "Share Feedback",
+				subtitle: "Tell us what to build next",
+			};
 		case "profile":
 		case "home":
 		default:
@@ -259,6 +265,14 @@ export const App: React.FC = () => {
 				return <SubscribeView />;
 			case "friends":
 				return <FriendsView />;
+			case "feedback":
+				return (
+					<FeedbackView
+						onBack={() =>
+							navigate(isAuthenticated ? PATHS.profile : PATHS.login)
+						}
+					/>
+				);
 			case "profile":
 			default:
 				return <ProfileView />;

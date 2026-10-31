@@ -16,7 +16,8 @@ export type RouteName =
 	| "analytics"
 	| "leaderboard"
 	| "subscribe"
-	| "friends";
+	| "friends"
+	| "feedback";
 
 export const PATHS: Record<RouteName, string> = {
 	home: "/",
@@ -29,6 +30,7 @@ export const PATHS: Record<RouteName, string> = {
 	leaderboard: "/leaderboard",
 	subscribe: "/subscribe",
 	friends: "/friends",
+	feedback: "/feedback",
 };
 
 export function parseRoute(pathname: string): RouteName {
@@ -52,6 +54,8 @@ export function parseRoute(pathname: string): RouteName {
 			return "subscribe";
 		case "/friends":
 			return "friends";
+		case "/feedback":
+			return "feedback";
 		case "/":
 		default:
 			return "home";

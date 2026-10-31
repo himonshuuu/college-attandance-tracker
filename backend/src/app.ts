@@ -8,6 +8,7 @@ import { sessionMiddleware } from "./middleware/session";
 import { attendanceRouter } from "./modules/attendance/attendance.routes";
 import { authRouter } from "./modules/auth/auth.routes";
 import { engagementRouter } from "./modules/engagement/engagement.routes";
+import { feedbackRouter } from "./modules/feedback/feedback.routes";
 import { friendsRouter } from "./modules/friends/friends.routes";
 import { leaderboardRouter } from "./modules/leaderboard/leaderboard.routes";
 import { profileRouter } from "./modules/profile/profile.routes";
@@ -64,6 +65,7 @@ app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/subscribe", subscriptionsRouter);
 app.use("/api/friends", friendsRouter);
 app.use("/api/engage", engagementRouter);
+app.use("/api/feedback", feedbackRouter);
 
 app.use((_request, response) =>
 	response.status(404).json({ success: false, error: "Not found" }),

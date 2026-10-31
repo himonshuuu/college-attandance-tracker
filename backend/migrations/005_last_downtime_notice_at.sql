@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS last_downtime_notice_at TIMESTAMPTZ;
