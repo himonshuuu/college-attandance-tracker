@@ -37,6 +37,10 @@ export const FeedbackView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 			setError("Please write at least a few words.");
 			return;
 		}
+		if (!name.trim()) {
+			setError("Please enter your name.");
+			return;
+		}
 
 		setSubmitting(true);
 		try {
@@ -119,14 +123,15 @@ export const FeedbackView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 				</p>
 
 				<label className="block text-xs font-semibold text-slate-600 mt-4 mb-2">
-					Name <span className="font-normal text-slate-400">(optional)</span>
+					Your name
 				</label>
 				<input
 					type="text"
 					value={name}
 					onChange={(e) => setName(e.target.value)}
 					maxLength={80}
-					placeholder="So we know who sent it"
+					required
+					placeholder="Required — so we know who sent it"
 					className="w-full p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-blue-500"
 				/>
 

@@ -10,6 +10,7 @@ import {
 	sendTestNotification,
 	sendWelcomeEmail,
 } from "../../modules/notifications/notification.service";
+import { notifyFeedbackSubmitted } from "../notifications/discord.service";
 import { events } from "./event.bus";
 
 // Called once at startup (server.ts). All notification side effects live
@@ -117,4 +118,15 @@ export function registerEventHandlers(): void {
 			);
 		},
 	);
+
+	events.subscribe("feedback.submitted", async (payload) => {
+		try {
+			await notifyFeedbackSubmitted(payload);
+		} catch (error) {
+			log("warn", "feedback-discord-notify-failed", {
+				feedbackId: payload.id,
+				error: error instanceof Error ? error.message : String(error),
+			});
+		}
+	});
 }

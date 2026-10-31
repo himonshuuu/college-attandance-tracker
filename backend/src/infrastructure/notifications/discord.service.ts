@@ -44,6 +44,60 @@ export async function notifyDiscord(
 		throw new Error(`Discord webhook returned HTTP ${response.status}`);
 }
 
+/** Discord user pinged for every new feedback submission. */
+const FEEDBACK_MENTION_ID = "775660503342776341";
+
+export async function notifyFeedbackSubmitted(details: {
+	id: string;
+	rating: number;
+	message: string;
+	name: string;
+	email: string;
+	userId: number | null;
+}): Promise<void> {
+	if (!env.DISCORD_WEBHOOK_URL) return;
+	const stars = "★".repeat(details.rating) + "☆".repeat(5 - details.rating);
+	const from =
+		details.name ||
+		details.email ||
+		(details.userId != null ? `User #${details.userId}` : "Guest");
+	const response = await fetch(env.DISCORD_WEBHOOK_URL, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+			content: `<@${FEEDBACK_MENTION_ID}>`,
+			allowed_mentions: { parse: [], users: [FEEDBACK_MENTION_ID] },
+			embeds: [
+				{
+					title: "💬 New feedback received",
+					description: details.message.slice(0, 1500),
+					color: 0x2563eb,
+					fields: [
+						{
+							name: "Rating",
+							value: `${stars} (${details.rating}/5)`,
+							inline: true,
+						},
+						{ name: "From", value: from.slice(0, 256), inline: true },
+						...(details.email
+							? [
+									{
+										name: "Email",
+										value: details.email.slice(0, 256),
+										inline: true,
+									},
+								]
+							: []),
+					],
+					timestamp: new Date().toISOString(),
+				},
+			],
+		}),
+	});
+	if (!response.ok)
+		throw new Error(`Discord webhook returned HTTP ${response.status}`);
+}
+
 export async function notifyAuthError(
 	student: NotificationUser,
 ): Promise<void> {

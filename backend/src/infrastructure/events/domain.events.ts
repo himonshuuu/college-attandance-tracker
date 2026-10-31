@@ -65,6 +65,14 @@ export interface DomainEvents {
 		total: number;
 		movedUp: boolean;
 	};
+	"feedback.submitted": {
+		id: string;
+		rating: number;
+		message: string;
+		name: string;
+		email: string;
+		userId: number | null;
+	};
 }
 
 export type EventName = keyof DomainEvents;

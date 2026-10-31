@@ -11,7 +11,11 @@ export const feedbackSchema = z.object({
 		.int("Rating must be a whole number.")
 		.min(1, "Rating must be between 1 and 5.")
 		.max(5, "Rating must be between 1 and 5."),
-	name: z.string().trim().max(80, "Name is too long.").optional().default(""),
+	name: z
+		.string()
+		.trim()
+		.min(1, "Please enter your name.")
+		.max(80, "Name is too long."),
 });
 
 export type FeedbackInput = z.infer<typeof feedbackSchema>;
